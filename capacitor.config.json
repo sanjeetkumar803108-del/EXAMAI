@@ -1,0 +1,9 @@
+{
+  "appId": "com.examai.app",
+  "appName": "ExamAI",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
+}
