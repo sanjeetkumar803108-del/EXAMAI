@@ -7,9 +7,20 @@ import LiveResearchModal from './components/LiveResearchModal';
 import ExamPaperView from './components/ExamPaperView';
 import AnswerEvaluationModal from './components/AnswerEvaluationModal';
 import SubscriptionModal from './components/SubscriptionModal';
+import { ToastProvider, useToast } from './components/Toast';
 import { performLiveWebResearch, generateExamPaper, evaluateStudentAnswers } from './services/aiGenerator';
 
 export default function App() {
+  return (
+    <ToastProvider>
+      <MainApp />
+    </ToastProvider>
+  );
+}
+
+function MainApp() {
+  const toast = useToast();
+
   // Auth state
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('examai_user');
@@ -48,6 +59,7 @@ export default function App() {
   // Handle Login
   const handleLoginSuccess = (loggedInUser) => {
     setUser(loggedInUser);
+    toast.success(`Welcome to ExamAI, ${loggedInUser.name || 'Candidate'}!`, 'Logged In');
     const existingProfile = localStorage.getItem('examai_profile');
     if (!existingProfile) {
       setShowProfileModal(true);
@@ -58,22 +70,26 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('examai_user');
     setUser(null);
+    toast.info('You have been signed out successfully.', 'Signed Out');
   };
 
   // Handle Profile Save
   const handleProfileSave = (updatedProfile) => {
     setProfile(updatedProfile);
     setShowProfileModal(false);
+    toast.success('Your educational profile and target exam have been saved.', 'Profile Saved');
   };
 
   // Trigger Sample Paper Generation with Live Web Grounding & Gemini
   const handleGeneratePaper = async ({ topic, questionCount, difficulty }) => {
     if (!profile) {
+      toast.info('Please configure your target exam and grade first.', 'Profile Required');
       setShowProfileModal(true);
       return;
     }
 
     if (testsRemaining <= 0) {
+      toast.warning('You have reached the monthly test limit. Upgrade to continue.', 'Usage Limit');
       setShowSubscriptionModal(true);
       return;
     }
@@ -103,9 +119,18 @@ export default function App() {
       const newRemaining = Math.max(0, testsRemaining - 1);
       setTestsRemaining(newRemaining);
       localStorage.setItem('examai_tests_remaining', newRemaining.toString());
+
+      const totalQ = paper.sections.reduce((acc, s) => acc + s.questions.length, 0);
+      toast.success(
+        `Generated official ${paper.title || 'Exam Paper'} with ${totalQ} questions aligned with blueprint!`,
+        'Exam Paper Ready'
+      );
     } catch (err) {
       console.error('Failed to generate paper:', err);
-      alert(err.message || 'Error generating exam paper. Please check console.');
+      toast.error(
+        err.message || 'Error generating exam paper. Please try again.',
+        'Paper Generation Issue'
+      );
     } finally {
       setIsGenerating(false);
       setResearchStep('');
@@ -120,9 +145,13 @@ export default function App() {
       setIsEvaluating(true);
       const report = await evaluateStudentAnswers(currentPaper, studentAnswers);
       setEvaluationReport(report);
+      toast.success('Live AI Step-Marking performance report is ready!', 'Evaluation Complete');
     } catch (err) {
       console.error('Evaluation failed:', err);
-      alert('Error evaluating answers.');
+      toast.error(
+        err.message || 'Error evaluating answers. Please retry.',
+        'Evaluation Issue'
+      );
     } finally {
       setIsEvaluating(false);
     }
