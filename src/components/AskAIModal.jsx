@@ -1,19 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Bot, Sparkles, HelpCircle, CheckCircle2, ArrowRight, ArrowLeft, Send, X, AlertTriangle, Lightbulb, BookOpen, RefreshCw } from 'lucide-react';
 import FormattedQuestionBody from './FormattedQuestionBody';
 import MathRenderer from './MathRenderer';
 import { askAIQuestionTutor } from '../services/aiGenerator';
 
 export default function AskAIModal({ isOpen, onClose, paper, profile, initialQuestionNumber = 1 }) {
-  // ✅ ALL HOOKS MUST BE CALLED UNCONDITIONALLY FIRST (React Rules of Hooks)
-  const allQuestions = (isOpen && paper) ? paper.sections.flatMap((s) => s.questions) : [];
+  // Extract all questions from paper safely
+  const allQuestions = (paper && paper.sections)
+    ? paper.sections.flatMap((s) => s.questions || [])
+    : [];
   const totalQuestions = allQuestions.length;
+
+  const initialNum = Math.min(Math.max(1, Number(initialQuestionNumber) || 1), Math.max(1, totalQuestions));
+  const initialFound = allQuestions.find((q) => Number(q.questionNumber) === initialNum) || allQuestions[0] || null;
 
   // Phase: 'selection' or 'chat'
   const [phase, setPhase] = useState('selection');
-  const [questionInput, setQuestionInput] = useState(String(initialQuestionNumber || 1));
+  const [questionInput, setQuestionInput] = useState(String(initialNum));
   const [inputError, setInputError] = useState('');
-  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [selectedQuestion, setSelectedQuestion] = useState(initialFound);
   const [mode, setMode] = useState('explain_question'); // 'explain_question' or 'explain_answer'
 
   // Chatbot State
@@ -24,7 +30,7 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
 
   // Validate question number on change
   useEffect(() => {
-    if (!isOpen || !paper || totalQuestions === 0) return;
+    if (!isOpen || totalQuestions === 0) return;
 
     const trimmed = questionInput.trim();
     if (!trimmed) {
@@ -59,16 +65,30 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
     }
   }, [questionInput, totalQuestions, isOpen, paper]);
 
-  // Set initial selected question on mount / when modal opens
+  // Set initial selected question whenever modal opens fresh or question number prop changes
   useEffect(() => {
-    if (!isOpen || !paper || totalQuestions === 0) return;
-    const initNum = Math.min(Math.max(1, initialQuestionNumber || 1), totalQuestions);
-    setQuestionInput(String(initNum));
-    // Reset chat when modal opens fresh
+    if (!isOpen || totalQuestions === 0) return;
+    const num = Math.min(Math.max(1, Number(initialQuestionNumber) || 1), totalQuestions);
+    setQuestionInput(String(num));
+    const found = allQuestions.find((q) => Number(q.questionNumber) === num) || allQuestions[0] || null;
+    setSelectedQuestion(found);
+    setInputError('');
     setPhase('selection');
     setMessages([]);
     setFollowUpText('');
   }, [isOpen, initialQuestionNumber, totalQuestions]);
+
+  // Lock body scroll when modal is open so the background page cannot scroll behind it
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -224,9 +244,15 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
     }
   };
 
-  return (
-    <div style={styles.backdrop} className="animate-fade-in">
-      <div style={styles.modalCard}>
+  return createPortal(
+    <div
+      style={styles.backdrop}
+      className="animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
         {/* PHASE 1: QUESTION SELECTION & EXPLANATION CHOICE */}
         {phase === 'selection' ? (
           <div>
@@ -316,16 +342,15 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
                   <div style={styles.previewHeader}>
                     <span style={styles.previewTag}>Selected for AI:</span>
                     <span style={styles.previewQNum}>
-                      Question {selectedQuestion.questionNumber} [{selectedQuestion.marks} Mark{selectedQuestion.marks > 1 ? 's' : ''}]
+                      Question {selectedQuestion.questionNumber} [{selectedQuestion.marks || 1} Mark{(selectedQuestion.marks || 1) > 1 ? 's' : ''}]
                     </span>
                   </div>
                   <div style={styles.previewText}>
                     <MathRenderer
-                      text={
-                        selectedQuestion.text.length > 160
-                          ? selectedQuestion.text.slice(0, 160) + '...'
-                          : selectedQuestion.text
-                      }
+                      text={(() => {
+                        const raw = selectedQuestion.text || selectedQuestion.question || '';
+                        return raw.length > 160 ? raw.slice(0, 160) + '...' : raw;
+                      })()}
                     />
                   </div>
                 </div>
@@ -589,7 +614,8 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -600,13 +626,17 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-    backdropFilter: 'blur(5px)',
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 99999,
+    zIndex: 999999,
     padding: '16px',
+    boxSizing: 'border-box',
   },
   modalCard: {
     width: '100%',
@@ -614,12 +644,14 @@ const styles = {
     maxHeight: '90vh',
     backgroundColor: '#ffffff',
     borderRadius: '20px',
-    boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
+    boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.35)',
     border: '1px solid #e2e8f0',
     overflowY: 'auto',
     padding: '24px',
     display: 'flex',
     flexDirection: 'column',
+    position: 'relative',
+    zIndex: 1000000,
   },
   header: {
     display: 'flex',
