@@ -5,10 +5,8 @@ import MathRenderer from './MathRenderer';
 import { askAIQuestionTutor } from '../services/aiGenerator';
 
 export default function AskAIModal({ isOpen, onClose, paper, profile, initialQuestionNumber = 1 }) {
-  if (!isOpen || !paper) return null;
-
-  // Extract all questions across sections
-  const allQuestions = paper.sections.flatMap((s) => s.questions);
+  // ✅ ALL HOOKS MUST BE CALLED UNCONDITIONALLY FIRST (React Rules of Hooks)
+  const allQuestions = (isOpen && paper) ? paper.sections.flatMap((s) => s.questions) : [];
   const totalQuestions = allQuestions.length;
 
   // Phase: 'selection' or 'chat'
@@ -26,6 +24,8 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
 
   // Validate question number on change
   useEffect(() => {
+    if (!isOpen || !paper || totalQuestions === 0) return;
+
     const trimmed = questionInput.trim();
     if (!trimmed) {
       setInputError('Please enter a question number.');
@@ -57,13 +57,18 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
       setInputError(`Could not locate Question ${num} in this paper.`);
       setSelectedQuestion(null);
     }
-  }, [questionInput, totalQuestions, allQuestions]);
+  }, [questionInput, totalQuestions, isOpen, paper]);
 
-  // Set initial selected question on mount
+  // Set initial selected question on mount / when modal opens
   useEffect(() => {
+    if (!isOpen || !paper || totalQuestions === 0) return;
     const initNum = Math.min(Math.max(1, initialQuestionNumber || 1), totalQuestions);
     setQuestionInput(String(initNum));
-  }, [initialQuestionNumber, totalQuestions]);
+    // Reset chat when modal opens fresh
+    setPhase('selection');
+    setMessages([]);
+    setFollowUpText('');
+  }, [isOpen, initialQuestionNumber, totalQuestions]);
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -71,6 +76,9 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isLoading, phase]);
+
+  // ✅ Early return AFTER all hooks
+  if (!isOpen || !paper) return null;
 
   // Trigger initial AI Tutor generation
   const handleStartTutor = async (chosenMode) => {
