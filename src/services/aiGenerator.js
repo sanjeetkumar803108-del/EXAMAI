@@ -463,14 +463,24 @@ Format response ONLY as valid JSON matching this schema:
       q.questionNumber = qNum;
       q.id = `q_${qNum}`;
       qNum++;
-      totalCalculatedMarks += (q.marks || 0);
+      // Ensure marks are strictly positive integers (no .33, .67 or bizarre decimals)
+      let cleanMarks = Number(q.marks) || 1;
+      cleanMarks = Math.max(1, Math.round(cleanMarks));
+      q.marks = cleanMarks;
+      totalCalculatedMarks += cleanMarks;
 
       // Sanitize question text, answer, and explanation
       q.text = sanitizeMathText(q.text);
       if (q.correctAnswer) q.correctAnswer = sanitizeMathText(q.correctAnswer);
       if (q.explanation) q.explanation = sanitizeMathText(q.explanation);
       if (q.stepMarkingScheme) {
-        q.stepMarkingScheme = q.stepMarkingScheme.map((s) => sanitizeMathText(s));
+        q.stepMarkingScheme = q.stepMarkingScheme.map((s) => {
+          let str = sanitizeMathText(s);
+          str = str.replace(/0\.7[0-9]\s*Marks?/gi, '1 Mark');
+          str = str.replace(/0\.3[0-9]\s*Marks?/gi, '0.5 Mark');
+          str = str.replace(/2\.3[0-9]\s*Marks?/gi, '2 Marks');
+          return str;
+        });
       }
 
       // Check and sanitize MCQ options

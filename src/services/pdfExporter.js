@@ -36,7 +36,7 @@ export function convertLatexToReadable(text) {
   });
   str = str.replace(/\\begin\{[a-zA-Z*]+\}|\\end\{[a-zA-Z*]+\}/g, '');
 
-  // 4. Fractions: \frac{a}{b} -> (a / b) with support for nested braces (e.g. \sqrt{3})
+  // 4. Fractions: \frac{a}{b} -> (a / b) with support for nested braces
   let fracIdx = str.indexOf('\\frac');
   let fracSafety = 0;
   while (fracIdx !== -1 && fracSafety++ < 40) {
@@ -151,10 +151,10 @@ export function convertLatexToReadable(text) {
   str = str.replace(/\\Rightarrow/g, ' => ');
   str = str.replace(/\\Leftrightarrow/g, ' <=> ');
 
-  // 14. Functions: sin, cos, tan, ln, log, exp
+  // 14. Functions
   str = str.replace(/\\(sin|cos|tan|sec|csc|cot|ln|log|arcsin|arccos|arctan|exp)/g, '$1');
 
-  // 15. Formatting commands: \mathbf{x}, \text{x}, \mathrm{x}, \vec{x}, \hat{x}
+  // 15. Formatting commands
   str = str.replace(/\\(mathbf|mathrm|text|mathit|bm)\{([^{}]+)\}/g, '$2');
   str = str.replace(/\\(vec|hat|bar|dot)\{([^{}]+)\}/g, '$2');
 
@@ -183,16 +183,15 @@ export function cleanForPDF(str) {
     .replace(/[–—]/g, '-')
     .replace(/•/g, '*');
 
-  // UNICODE SUPERSCRIPTS: Convert single and multi-digit sequences (e.g. 10⁻¹⁹ -> 10^-19)
+  // UNICODE SUPERSCRIPTS
   out = out.replace(/([⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱ]+)/g, (match) => {
     const chars = match.split('').map((ch) => UNICODE_SUPER_MAP[ch] || ch).join('');
     return `^(${chars})`;
   });
-  // Simplify single numbers/letters: ^(2) -> ^2, ^(-1) -> ^-1
   out = out.replace(/\^\(([0-9a-zA-Z])\)/g, '^$1');
   out = out.replace(/\^\((-[0-9a-zA-Z]+)\)/g, '^$1');
 
-  // UNICODE SUBSCRIPTS: Convert single and multi-digit sequences (e.g. H₂O -> H_2O)
+  // UNICODE SUBSCRIPTS
   out = out.replace(/([₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎]+)/g, (match) => {
     const chars = match.split('').map((ch) => UNICODE_SUB_MAP[ch] || ch).join('');
     return `_${chars}`;
@@ -262,44 +261,58 @@ export function cleanForPDF(str) {
   return out.trim();
 }
 
-// Parse question text into text and structured Markdown table blocks
+// Parse text into structured blocks (paragraphs and tables)
 export function parseQuestionBlocks(rawText) {
   if (!rawText) return [];
-  const lines = rawText.split('\n');
+  let text = String(rawText);
+
+  // Normalize inline tables: split concatenated rows like `| val1 | val2 | | val3 | val4 |`
+  text = text.replace(/\|\s*\|\s*/g, '|\n|');
+
+  // Insert line breaks before and after embedded tables so markdown parser isolates table rows
+  text = text.replace(/([^\n|])\s*(\|[\s\S]*?\|)\s*([^\n|])/g, '$1\n$2\n$3');
+
+  const lines = text.split('\n');
   const blocks = [];
   let currentTable = null;
   let currentText = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line.startsWith('|') && line.endsWith('|')) {
+    if (line.startsWith('|') && line.endsWith('|') && line.split('|').length > 2) {
       if (currentText.length > 0) {
-        blocks.push({ type: 'text', content: currentText.join('\n') });
+        const joined = currentText.join('\n').trim();
+        if (joined) blocks.push({ type: 'text', content: joined });
         currentText = [];
       }
       if (!currentTable) currentTable = [];
-      // Skip markdown separator line like |---|---|
+      // Skip delimiter lines like |---|---|
       if (!/^\|[\s\-:|]+\|$/.test(line)) {
         const cells = line
           .slice(1, -1)
           .split('|')
           .map((c) => c.trim());
-        currentTable.push(cells);
+        if (cells.length > 0 && cells.some((c) => c.length > 0)) {
+          currentTable.push(cells);
+        }
       }
     } else {
-      if (currentTable) {
+      if (currentTable && currentTable.length > 0) {
         blocks.push({ type: 'table', rows: currentTable });
         currentTable = null;
       }
-      currentText.push(lines[i]);
+      if (line) {
+        currentText.push(line);
+      }
     }
   }
 
-  if (currentTable) {
+  if (currentTable && currentTable.length > 0) {
     blocks.push({ type: 'table', rows: currentTable });
   }
   if (currentText.length > 0) {
-    blocks.push({ type: 'text', content: currentText.join('\n') });
+    const joined = currentText.join('\n').trim();
+    if (joined) blocks.push({ type: 'text', content: joined });
   }
 
   return blocks;
@@ -326,17 +339,97 @@ export function exportExamToPDF(paper) {
     }
   }
 
+  // Running header on pages 2+ with strict collision prevention
   function addPageHeaderMini() {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(140, 140, 140);
+    doc.setFontSize(7.5);
+    doc.setTextColor(130, 130, 130);
+
     const examName = paper.targetExam || paper.title || 'Standardized Exam';
-    doc.text(`${cleanForPDF(examName)} - ${cleanForPDF(paper.topic)} - Set ${cleanForPDF(paper.paperCode)}`, margin, y);
-    doc.text(`Roll No: [_______________]`, pageWidth - margin - 45, y);
-    y += 5;
+    const topicText = paper.topic || '';
+    const setCode = paper.paperCode ? ` | Set ${paper.paperCode}` : '';
+
+    // Guaranteed 48mm safe zone on the right for Roll No
+    const maxLeftWidth = contentWidth - 48;
+    const fullHeaderLeft = `${cleanForPDF(examName)} - ${cleanForPDF(topicText)}${cleanForPDF(setCode)}`;
+    const splitLeft = doc.splitTextToSize(fullHeaderLeft, maxLeftWidth);
+    doc.text(splitLeft[0], margin, y);
+
+    // Right-aligned Roll Number box
+    doc.text('Roll No: [_______________]', pageWidth - margin, y, { align: 'right' });
+
+    y += 4;
     doc.setDrawColor(220, 220, 220);
     doc.line(margin, y, pageWidth - margin, y);
-    y += 8;
+    y += 7;
+  }
+
+  // Helper to draw formatted academic grid tables with text wrapping
+  function renderTableBlock(rows, totalWidth, leftMargin) {
+    if (!rows || rows.length === 0) return;
+    const numCols = Math.max(...rows.map((r) => r.length));
+    if (numCols === 0) return;
+
+    // Distribute columns dynamically based on column count
+    let colWidths = [];
+    if (numCols === 2) {
+      colWidths = [totalWidth * 0.42, totalWidth * 0.58]; // Match columns (e.g. Item vs Detailed Description)
+    } else {
+      const standardWidth = totalWidth / numCols;
+      colWidths = Array(numCols).fill(standardWidth);
+    }
+
+    const startX = leftMargin;
+
+    rows.forEach((row, rIdx) => {
+      // Step 1: Pre-wrap text for each cell and measure maximum lines
+      const cellData = row.map((cell, cIdx) => {
+        const cWidth = colWidths[cIdx] || (totalWidth / numCols);
+        const cellText = cleanForPDF(cell);
+        const wrapped = doc.splitTextToSize(cellText, cWidth - 4);
+        return {
+          textLines: wrapped,
+          width: cWidth,
+        };
+      });
+
+      const maxLines = Math.max(1, ...cellData.map((cd) => cd.textLines.length));
+      const rowHeight = Math.max(6.5, maxLines * 3.6 + 3);
+
+      checkPageBreak(rowHeight + 2);
+
+      // Step 2: Render each cell with borders, shading and wrapped text
+      let currentX = startX;
+      cellData.forEach((cd, cIdx) => {
+        doc.setDrawColor(203, 213, 225);
+        if (rIdx === 0) {
+          doc.setFillColor(241, 245, 249); // Header slate shading
+        } else if (rIdx % 2 === 1) {
+          doc.setFillColor(255, 255, 255);
+        } else {
+          doc.setFillColor(248, 250, 252); // Subtle alternate striping
+        }
+        doc.rect(currentX, y, cd.width, rowHeight, 'FD');
+
+        doc.setFont('helvetica', rIdx === 0 ? 'bold' : 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(15, 23, 42);
+
+        // Center short numbers or codes; left-align descriptions
+        const isShortNum = cd.textLines.length === 1 && cd.textLines[0].length <= 5 && !isNaN(Number(cd.textLines[0]));
+        if (numCols >= 4 && isShortNum) {
+          doc.text(cd.textLines, currentX + cd.width / 2, y + 4.2, { align: 'center' });
+        } else {
+          doc.text(cd.textLines, currentX + 2.5, y + 4.2);
+        }
+
+        currentX += cd.width;
+      });
+
+      y += rowHeight;
+    });
+
+    y += 3.5;
   }
 
   // --- COVER / FIRST PAGE HEADER ---
@@ -369,48 +462,53 @@ export function exportExamToPDF(paper) {
   doc.text(cleanForPDF(paper.board), pageWidth / 2, y, { align: 'center' });
   y += 5;
 
+  // Subject & Topic
+  doc.setFontSize(8.5);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10.5);
   doc.text(`SUBJECT: ${cleanForPDF(paper.subject)} - TOPIC: "${cleanForPDF(paper.topic).toUpperCase()}"`, pageWidth / 2, y, {
     align: 'center',
   });
   y += 6;
 
-  // Time & Max Marks line
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9.5);
-  doc.setTextColor(30, 41, 59);
-  doc.text(`TIME ALLOWED: ${cleanForPDF(paper.timeAllowed).toUpperCase()}`, margin, y);
-  doc.text(`MAXIMUM MARKS: ${paper.maxMarks}`, pageWidth - margin, y, { align: 'right' });
-  y += 4;
-
-  doc.setLineWidth(0.5);
-  doc.setDrawColor(15, 23, 42);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 6;
-
-  // General Instructions
+  // Time & Marks (Always solid integers)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
-  doc.text('GENERAL INSTRUCTIONS:', margin, y);
-  y += 4.5;
+  doc.text(`TIME ALLOWED: ${cleanForPDF(paper.timeAllowed).toUpperCase()}`, margin, y);
+  const cleanMaxMarks = Math.round(Number(paper.maxMarks) || 100);
+  doc.text(`MAXIMUM MARKS: ${cleanMaxMarks}`, pageWidth - margin, y, { align: 'right' });
+  y += 5;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(50, 50, 50);
-
-  paper.generalInstructions.forEach((inst, idx) => {
-    const instText = `${idx + 1}. ${cleanForPDF(inst)}`;
-    const wrappedInst = doc.splitTextToSize(instText, contentWidth - 4);
-    doc.text(wrappedInst, margin + 2, y);
-    y += wrappedInst.length * 3.5 + 1;
-  });
-
-  y += 3;
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.2);
+  // Header separator line
+  doc.setDrawColor(15, 23, 42);
+  doc.setLineWidth(0.6);
   doc.line(margin, y, pageWidth - margin, y);
+  doc.setLineWidth(0.2);
   y += 6;
+
+  // General Instructions Box
+  if (paper.instructions && paper.instructions.length > 0) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text('GENERAL INSTRUCTIONS:', margin, y);
+    y += 4;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(51, 65, 85);
+
+    paper.instructions.forEach((inst, idx) => {
+      const instText = `${idx + 1}. ${cleanForPDF(inst)}`;
+      const wrappedInst = doc.splitTextToSize(instText, contentWidth - 4);
+      doc.text(wrappedInst, margin + 2, y);
+      y += wrappedInst.length * 3.4;
+    });
+
+    y += 5;
+    doc.setDrawColor(226, 232, 240);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 7;
+  }
 
   // --- SECTIONS & QUESTIONS ---
   paper.sections.forEach((section) => {
@@ -425,7 +523,7 @@ export function exportExamToPDF(paper) {
     doc.text(`${cleanForPDF(section.name)} - ${cleanForPDF(section.description)}`, margin + 3, y + 4.8);
     y += 11;
 
-    // Render Reading Passage / Reference Context Box if present in section
+    // Render Reading Passage / Reference Context Box (with full support for embedded tables!)
     if (section.passage) {
       checkPageBreak(35);
       doc.setFont('helvetica', 'bold');
@@ -434,19 +532,29 @@ export function exportExamToPDF(paper) {
       doc.text('READING PASSAGE / REFERENCE CONTEXT:', margin, y);
       y += 4.5;
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.2);
-      doc.setTextColor(51, 65, 85);
-      const cleanedPassage = cleanForPDF(section.passage);
-      const wrappedPassage = doc.splitTextToSize(cleanedPassage, contentWidth - 4);
+      const passageBlocks = parseQuestionBlocks(section.passage);
+      passageBlocks.forEach((block) => {
+        if (block.type === 'text') {
+          const cleanedText = cleanForPDF(block.content);
+          if (cleanedText.trim()) {
+            const wrappedPassage = doc.splitTextToSize(cleanedText, contentWidth - 4);
+            const passageBoxHeight = wrappedPassage.length * 3.6 + 4;
+            checkPageBreak(passageBoxHeight + 2);
+            doc.setFillColor(250, 250, 250);
+            doc.setDrawColor(226, 232, 240);
+            doc.roundedRect(margin, y - 1, contentWidth, passageBoxHeight, 1, 1, 'FD');
 
-      const passageBoxHeight = wrappedPassage.length * 3.6 + 4;
-      doc.setFillColor(250, 250, 250);
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(margin, y - 2, contentWidth, passageBoxHeight, 1, 1, 'FD');
-
-      doc.text(wrappedPassage, margin + 2, y + 2);
-      y += passageBoxHeight + 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.2);
+            doc.setTextColor(51, 65, 85);
+            doc.text(wrappedPassage, margin + 2.5, y + 2.5);
+            y += passageBoxHeight + 3.5;
+          }
+        } else if (block.type === 'table' && block.rows.length > 0) {
+          renderTableBlock(block.rows, contentWidth, margin);
+        }
+      });
+      y += 2;
     }
 
     section.questions.forEach((q) => {
@@ -458,10 +566,11 @@ export function exportExamToPDF(paper) {
       doc.setTextColor(15, 23, 42);
       doc.text(`Q.${q.questionNumber}`, margin, y);
 
+      const qMarks = Math.max(1, Math.round(Number(q.marks) || 1));
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
       doc.setTextColor(100, 116, 139);
-      doc.text(`[${q.marks} Mark${q.marks > 1 ? 's' : ''}]`, pageWidth - margin, y, { align: 'right' });
+      doc.text(`[${qMarks} Mark${qMarks > 1 ? 's' : ''}]`, pageWidth - margin, y, { align: 'right' });
 
       // Move to question body
       y += 4.5;
@@ -482,29 +591,7 @@ export function exportExamToPDF(paper) {
             y += wrappedText.length * 4.2 + 2;
           }
         } else if (block.type === 'table' && block.rows.length > 0) {
-          const rows = block.rows;
-          const numCols = Math.max(...rows.map((r) => r.length));
-          const colWidth = Math.min(32, (contentWidth - 10) / numCols);
-          const totalTableWidth = colWidth * numCols;
-          const startX = margin + Math.max(0, (contentWidth - totalTableWidth) / 2);
-          const rowHeight = 6.5;
-
-          checkPageBreak(rows.length * rowHeight + 4);
-
-          rows.forEach((row, rIdx) => {
-            row.forEach((cell, cIdx) => {
-              doc.setDrawColor(203, 213, 225);
-              doc.setFillColor(rIdx === 0 ? 241 : 255, rIdx === 0 ? 245 : 255, rIdx === 0 ? 249 : 255);
-              doc.rect(startX + cIdx * colWidth, y, colWidth, rowHeight, 'FD');
-              doc.setFont('helvetica', rIdx === 0 ? 'bold' : 'normal');
-              doc.setFontSize(8);
-              doc.setTextColor(15, 23, 42);
-              const cellText = cleanForPDF(cell);
-              doc.text(cellText, startX + cIdx * colWidth + colWidth / 2, y + 4.5, { align: 'center' });
-            });
-            y += rowHeight;
-          });
-          y += 3;
+          renderTableBlock(block.rows, contentWidth, margin);
         }
       });
 
@@ -540,52 +627,73 @@ export function exportExamToPDF(paper) {
   doc.setFontSize(10);
   doc.setTextColor(255, 255, 255);
   doc.text('OFFICIAL MARKING SCHEME, SOLUTIONS & STEP-WISE RUBRIC', pageWidth / 2, y + 5.5, { align: 'center' });
-  y += 14;
+  y += 13;
 
   paper.sections.forEach((section) => {
-    checkPageBreak(20);
+    checkPageBreak(18);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(30, 41, 59);
     doc.text(`${cleanForPDF(section.name)} SOLUTIONS`, margin, y);
-    y += 5;
+    y += 4.5;
 
     section.questions.forEach((q) => {
-      checkPageBreak(20);
+      const qMarks = Math.max(1, Math.round(Number(q.marks) || 1));
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(15, 23, 42);
-      doc.text(`Q.${q.questionNumber} [Max: ${q.marks}M]:`, margin, y);
-      y += 4;
+      // Compact rendering for MCQs to avoid wasteful page spill
+      if (q.type === 'mcq') {
+        checkPageBreak(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.2);
+        doc.setTextColor(15, 23, 42);
+        const qPrefix = `Q.${q.questionNumber} [${qMarks}M]: `;
+        const prefixWidth = doc.getTextWidth(qPrefix);
+        doc.text(qPrefix, margin, y);
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(30, 41, 59);
-      const cleanedAns = cleanForPDF(q.correctAnswer);
-      const ansLines = doc.splitTextToSize(`Ans: ${cleanedAns}`, contentWidth);
-      doc.text(ansLines, margin, y);
-      y += ansLines.length * 3.8 + 2;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 41, 59);
+        const cleanedAns = cleanForPDF(q.correctAnswer);
+        const ansText = `Ans: ${cleanedAns}  (+${qMarks} Marks)`;
+        const wrappedAns = doc.splitTextToSize(ansText, contentWidth - prefixWidth);
+        doc.text(wrappedAns, margin + prefixWidth, y);
+        y += wrappedAns.length * 3.5 + 1.2;
+      } else {
+        // Detailed subjective / case-study question with step-by-step marking rubric
+        checkPageBreak(18);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`Q.${q.questionNumber} [Max: ${qMarks}M]:`, margin, y);
+        y += 4;
 
-      // Step marking scheme
-      if (q.stepMarkingScheme && q.stepMarkingScheme.length > 0) {
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(7.5);
-        doc.setTextColor(71, 85, 105);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.2);
+        doc.setTextColor(30, 41, 59);
+        const cleanedAns = cleanForPDF(q.correctAnswer);
+        const ansLines = doc.splitTextToSize(`Ans: ${cleanedAns}`, contentWidth);
+        doc.text(ansLines, margin, y);
+        y += ansLines.length * 3.6 + 1.5;
 
-        q.stepMarkingScheme.forEach((step) => {
-          checkPageBreak(6);
-          const cleanedStep = cleanForPDF(step);
-          const stepLine = doc.splitTextToSize(`* ${cleanedStep}`, contentWidth - 4);
-          doc.text(stepLine, margin + 2, y);
-          y += stepLine.length * 3.2 + 0.5;
-        });
+        // Step marking scheme
+        if (q.stepMarkingScheme && q.stepMarkingScheme.length > 0) {
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(7.5);
+          doc.setTextColor(71, 85, 105);
+
+          q.stepMarkingScheme.forEach((step) => {
+            checkPageBreak(5);
+            const cleanedStep = cleanForPDF(step);
+            const stepLine = doc.splitTextToSize(`* ${cleanedStep}`, contentWidth - 4);
+            doc.text(stepLine, margin + 2, y);
+            y += stepLine.length * 3.1 + 0.5;
+          });
+        }
+
+        y += 2.5;
       }
-
-      y += 3;
     });
 
-    y += 3;
+    y += 2;
   });
 
   // Footer on all pages
