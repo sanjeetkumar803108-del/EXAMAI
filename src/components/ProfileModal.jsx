@@ -72,7 +72,22 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
     }
   };
 
-  // Live Online Research for Custom Country
+  // Delete a custom added country
+  const handleDeleteCustomCountry = (e, countryIdToDelete) => {
+    e.stopPropagation();
+    const updated = { ...customCatalogs };
+    delete updated[countryIdToDelete];
+    setCustomCatalogs(updated);
+    localStorage.setItem('examai_custom_catalogs', JSON.stringify(updated));
+
+    if (country === countryIdToDelete) {
+      handleCountryChange('in');
+    }
+    setFetchSuccess('');
+    setFetchError('');
+  };
+
+  // Live Online Research for Custom Country with Typo-Correction & Real Geography Validation
   const handleSaveNewCountry = async (e) => {
     if (e) e.preventDefault();
     const query = newCountryName.trim();
@@ -117,7 +132,7 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
       }
 
       setFetchSuccess(
-        `✓ ${result.name} ${result.flag} added! Updated Grades, Streams, and ${result.targetExams?.length || 0} National Board Exams.`
+        `✓ ${result.name} ${result.flag || ''} added! Auto-calibrated Grades, Streams, and ${result.targetExams?.length || 0} National Board Exams.`
       );
       setIsAddingCountry(false);
       setNewCountryName('');
@@ -152,7 +167,7 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
     onSave(updated);
   };
 
-  // Base preset countries without the static 'global' button (replaced by + Add Country)
+  // Base preset countries without the static 'global' button
   const baseCountries = COUNTRIES.filter((c) => c.id !== 'global');
   const customList = Object.values(customCatalogs);
   const visibleCountries = [...baseCountries, ...customList];
@@ -254,22 +269,46 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
 
             {/* Country Cards Grid */}
             <div style={styles.countryGrid}>
-              {visibleCountries.map((c) => (
-                <button
-                  type="button"
-                  key={c.id}
-                  onClick={() => handleCountryChange(c.id)}
-                  style={{
-                    ...styles.countryCard,
-                    borderColor: country === c.id ? '#0f172a' : '#e2e8f0',
-                    backgroundColor: country === c.id ? '#f8fafc' : '#ffffff',
-                    fontWeight: country === c.id ? '700' : '500',
-                  }}
-                >
-                  <span style={{ fontSize: '18px' }}>{c.flag || '🌍'}</span>
-                  <span style={styles.countryName}>{c.name}</span>
-                </button>
-              ))}
+              {visibleCountries.map((c) => {
+                const isCustom = Boolean(customCatalogs[c.id]);
+                const isSelected = country === c.id;
+
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      ...styles.countryCardWrapper,
+                      borderColor: isSelected ? '#0f172a' : '#e2e8f0',
+                      backgroundColor: isSelected ? '#f8fafc' : '#ffffff',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleCountryChange(c.id)}
+                      style={{
+                        ...styles.countryCardBtn,
+                        fontWeight: isSelected ? '700' : '500',
+                      }}
+                      title={c.name}
+                    >
+                      <span style={styles.flagText}>{c.flag || c.countryCode || '🌍'}</span>
+                      <span style={styles.countryName}>{c.name}</span>
+                    </button>
+
+                    {/* Quick remove button for custom-added entries */}
+                    {isCustom && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteCustomCountry(e, c.id)}
+                        style={styles.deleteCountryBtn}
+                        title={`Remove ${c.name} from list`}
+                      >
+                        <X size={12} color="#94a3b8" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* Interactive "+ Add Country" Button (Replacing International / IB) */}
               {!isAddingCountry && (
@@ -281,7 +320,7 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
                     setFetchSuccess('');
                   }}
                   style={styles.addCountryCard}
-                  title="Add any country — ExamAI will fetch its official curriculum online"
+                  title="Add any real country or state — AI will auto-correct typos & fetch authentic curriculum"
                 >
                   <div style={styles.addIconCircle}>
                     <Plus size={15} color="#2563eb" />
@@ -291,7 +330,7 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
               )}
             </div>
 
-            {/* Custom Country Input Box */}
+            {/* Custom Country Input Box with Smart Auto-Correction & State support */}
             {isAddingCountry && (
               <div style={styles.addCountryBox} className="animate-fade-in">
                 <div style={styles.addInputRow}>
@@ -306,7 +345,7 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
                         handleSaveNewCountry();
                       }
                     }}
-                    placeholder="Type your country (e.g. Germany, France, Japan, Singapore, Brazil)..."
+                    placeholder="Type real country or state (e.g. Germany, Japan, California, Bihar)..."
                     style={styles.addInput}
                     autoFocus
                     disabled={isFetchingCurriculum}
@@ -352,7 +391,7 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
                 <div style={styles.addInputHint}>
                   <Sparkles size={13} color="#2563eb" />
                   <span>
-                    ExamAI AI will research this country's official education ministry, grades, streams, and national standardized board exams.
+                    Smart AI Geo-Validation: Auto-corrects spelling typos (e.g. <em>Jpan &rarr; Japan</em>, <em>Grmany &rarr; Germany</em>) & accepts recognized states (e.g. <em>Bihar &rarr; Bihar (India)</em>).
                   </span>
                 </div>
               </div>
@@ -364,10 +403,10 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
                 <Loader2 size={18} className="animate-spin" color="#2563eb" />
                 <div style={{ flex: 1 }}>
                   <div style={styles.processingTitle}>
-                    Researching {newCountryName || 'Country'} Curriculum Online...
+                    Validating & Researching "{newCountryName}" Curriculum...
                   </div>
                   <div style={styles.processingDesc}>
-                    Live AI analysis of national examination boards, high school grades, and subject tracks.
+                    AI is verifying geographic legitimacy, fixing typos, and fetching official national/state examination boards.
                   </div>
                 </div>
               </div>
@@ -598,26 +637,57 @@ const styles = {
   },
   countryGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(115px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
     gap: '8px',
   },
-  countryCard: {
+  countryCardWrapper: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    padding: '8px 10px',
     borderRadius: '8px',
     border: '1.5px solid #e2e8f0',
+    backgroundColor: '#ffffff',
+    position: 'relative',
+    transition: 'border-color 0.15s ease, background-color 0.15s ease',
+    overflow: 'hidden',
+  },
+  countryCardBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 8px',
+    backgroundColor: 'transparent',
+    border: 'none',
     fontSize: '12px',
     color: '#1e293b',
     cursor: 'pointer',
     textAlign: 'left',
-    transition: 'border-color 0.15s ease, background-color 0.15s ease',
+    flex: 1,
+    minWidth: 0,
+  },
+  flagText: {
+    fontSize: '14px',
+    fontWeight: '700',
+    flexShrink: 0,
   },
   countryName: {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+  },
+  deleteCountryBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '20px',
+    height: '20px',
+    padding: 0,
+    marginRight: '4px',
+    borderRadius: '50%',
+    border: 'none',
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    flexShrink: 0,
+    transition: 'background-color 0.15s ease',
   },
   addCountryCard: {
     display: 'flex',

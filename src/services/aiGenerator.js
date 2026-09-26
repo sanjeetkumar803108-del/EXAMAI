@@ -700,42 +700,71 @@ function generateFallbackCountryCurriculum(countryName) {
   };
 }
 
-// Live Deep Research on Any Custom Country's Education System, Grades & Exams
+// Live Deep Research on Any Custom Country's Education System, Grades & Exams with Smart Validation & Typo-Correction
 export async function fetchCountryEducationSystem(countryName) {
   const apiKey = getApiKey();
+  const query = (countryName || '').trim();
 
-  const prompt = `You are a Global Education System & Examination Board Authority.
-Research and return the authentic, official educational framework for the country: "${countryName}".
+  if (!query || query.length < 2) {
+    throw new Error('Please enter a valid country or state name (at least 2 letters).');
+  }
 
-Return ONLY valid JSON matching this schema:
+  const prompt = `You are a Global Geography, National Curriculum & Educational Board Authority.
+A user is attempting to add a country or recognized state/province/territory: "${query}".
+
+YOUR INSTRUCTIONS:
+1. VALIDATION:
+   - Check if "${query}" refers to a real, authentic, existing sovereign country (e.g. Germany, Japan, France, Brazil, South Korea, Egypt, Uganda) OR an official subnational state/province/jurisdiction (e.g. Bihar, California, Bavaria, Ontario, New South Wales, Dubai, Scotland, Texas).
+   - If it is complete nonsense, random gibberish (e.g. "asdfgh", "qwerty", "xyz123"), fictional/fake places (e.g. "Wakanda", "Narnia", "Republic of X", "Unknown", "Unknown Country"), or not a real geographic educational jurisdiction:
+     Return ONLY JSON with "isValid": false and a friendly error message explaining what was invalid.
+     Example:
+     {
+       "isValid": false,
+       "error": "Could not recognize '${query}' as a real country or state. Please enter a valid geographic country or state (e.g. Germany, Japan, California, Bihar)."
+     }
+
+2. TYPO TOLERANCE & SMART AUTO-CORRECTION:
+   - If the user made minor spelling errors or typos (e.g. "Grmany" -> Germany, "Jpan" -> Japan, "Austraila" -> Australia, "Frnce" -> France, "Soth Korea" -> South Korea, "Brazl" -> Brazil, "Singapor" -> Singapore, "Deutchland" -> Germany, "Biher" -> Bihar, "Califonia" -> California):
+     Auto-correct it intelligently to the authentic official name!
+
+3. STATE / PROVINCE HANDLING:
+   - If the query is a recognized state or province (e.g. "Bihar", "California", "Bavaria", "Ontario", "New Delhi"):
+     Set "name" as: "State Name (Country Name)", e.g. "Bihar (India)", "California (United States)".
+     Set "isState": true.
+     Fetch that specific state's official board curriculum (e.g. BSEB for Bihar, California State Standards / AP for California).
+
+4. IF VALID, RETURN JSON:
 {
-  "id": "${countryName.toLowerCase().replace(/[^a-z0-9]/g, '_')}",
-  "name": "${countryName}",
-  "flag": "Flag emoji of this country (e.g. 🇩🇪, 🇫🇷, 🇯🇵, 🇸🇬, 🇧🇷, 🇨🇦, 🇦🇺)",
-  "currency": "Currency symbol (e.g. €, ¥, $, S$, £)",
+  "isValid": true,
+  "id": "normalized_snake_case_id",
+  "name": "Official Corrected Country or State Name",
+  "parentCountry": "Country name if state, else same as name",
+  "flag": "Authentic country flag emoji (e.g. 🇩🇪, 🇯🇵, 🇧🇷, 🇰🇷, 🇮🇳, 🇺🇸, 🇺🇬)",
+  "countryCode": "2-letter ISO code e.g. DE, JP, US, IN, UG",
+  "currency": "Official currency symbol (e.g. €, ¥, $, ₹, £, UGX)",
   "grades": [
-    "Grade / Level 1 (e.g. Lower Secondary / Middle)",
-    "Grade / Level 2 (e.g. Secondary / High School)",
-    "Grade / Level 3 (e.g. Senior Secondary / Junior College)",
-    "Grade / Level 4 (e.g. Final Graduation Year / Pre-University)",
-    "University Entrance / Higher Education"
+    "Grade / Level 1",
+    "Grade / Level 2",
+    "Grade / Level 3",
+    "Grade / Level 4",
+    "Grade / Level 5"
   ],
   "streams": [
     { "id": "stem", "name": "Natural Sciences & STEM (Physics, Chemistry, Math)" },
     { "id": "medical", "name": "Pre-Medical & Life Sciences (Biology, Chemistry)" },
     { "id": "commerce", "name": "Business, Commerce & Economics" },
     { "id": "humanities", "name": "Humanities, Arts & Social Sciences" },
-    { "id": "technical", "name": "Technical, Vocational & Applied Sciences" }
+    { "id": "technical", "name": "Technical & Vocational Studies" }
   ],
   "targetExams": [
     {
       "id": "exam_1",
-      "name": "Most Prominent National Exam (e.g. Abitur, Baccalauréat, O-Levels, A-Levels, Gaokao, Suneung, Matura, HSC, NCEA)",
+      "name": "Most Prominent Official National / State Exam",
       "authority": "Official Ministry of Education or Examination Board name"
     }
   ]
 }
-Include between 4 and 8 real, authentic national and standardized board/entrance examinations for "${countryName}".`;
+Include between 4 and 8 real, authentic national/state standardized and board examinations for this jurisdiction.`;
 
   if (apiKey) {
     for (const model of ACTIVE_MODELS) {
@@ -746,7 +775,7 @@ Include between 4 and 8 real, authentic national and standardized board/entrance
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
           }),
         });
 
@@ -756,22 +785,35 @@ Include between 4 and 8 real, authentic national and standardized board/entrance
           if (text) {
             const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
             const parsed = JSON.parse(cleanText);
+
+            if (parsed.isValid === false) {
+              throw new Error(parsed.error || `Could not recognize "${query}" as a real country or state.`);
+            }
+
             if (parsed && Array.isArray(parsed.grades) && Array.isArray(parsed.targetExams)) {
               if (!parsed.flag || parsed.flag.length > 4) {
-                parsed.flag = getCountryFlag(countryName);
+                parsed.flag = getCountryFlag(parsed.parentCountry || parsed.name || query);
               }
               return parsed;
             }
           }
         }
       } catch (err) {
+        if (err.message && err.message.includes('Could not recognize')) {
+          throw err;
+        }
         console.warn(`Model ${model} failed country lookup:`, err.message);
       }
     }
   }
 
-  // Graceful fallback with realistic framework for the requested country
-  return generateFallbackCountryCurriculum(countryName);
+  // If known country in offline dictionary, fallback safely; otherwise reject unknown
+  const flag = getCountryFlag(query);
+  if (flag !== '🌍') {
+    return generateFallbackCountryCurriculum(query);
+  }
+
+  throw new Error(`Could not recognize "${query}" as a real country or state. Please enter a valid geographic jurisdiction (e.g. Germany, Japan, France, California, Bihar).`);
 }
 
 
