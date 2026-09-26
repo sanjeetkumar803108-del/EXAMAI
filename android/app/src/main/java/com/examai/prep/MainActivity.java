@@ -1,4 +1,4 @@
-package com.examai.app;
+package com.examai.prep;
 
 import com.getcapacitor.BridgeActivity;
 

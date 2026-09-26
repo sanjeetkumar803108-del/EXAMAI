@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
@@ -9,6 +9,8 @@ import AnswerEvaluationModal from './components/AnswerEvaluationModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import { ToastProvider, useToast } from './components/Toast';
 import { performLiveWebResearch, generateExamPaper, evaluateStudentAnswers } from './services/aiGenerator';
+import { auth } from './lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default function App() {
   return (
@@ -26,6 +28,25 @@ function MainApp() {
     const saved = localStorage.getItem('examai_user');
     return saved ? JSON.parse(saved) : null;
   });
+
+  // Listen for persistent Firebase auth state (vital for Mobile Google Redirects)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const userData = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Candidate',
+          email: firebaseUser.email,
+          avatar: firebaseUser.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${firebaseUser.email}`,
+          authProvider: 'google',
+          createdAt: new Date().toISOString(),
+        };
+        setUser(userData);
+        localStorage.setItem('examai_user', JSON.stringify(userData));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Profile state
   const [profile, setProfile] = useState(() => {
@@ -67,7 +88,12 @@ function MainApp() {
   };
 
   // Handle Logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn('SignOut error:', e);
+    }
     localStorage.removeItem('examai_user');
     setUser(null);
     toast.info('You have been signed out successfully.', 'Signed Out');

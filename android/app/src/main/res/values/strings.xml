@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">ExamAI</string>
     <string name="title_activity_main">ExamAI</string>
-    <string name="package_name">com.examai.app</string>
-    <string name="custom_url_scheme">com.examai.app</string>
+    <string name="package_name">com.examai.prep</string>
+    <string name="custom_url_scheme">com.examai.prep</string>
 </resources>

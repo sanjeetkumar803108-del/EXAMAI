@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.examai.app"
+    namespace = "com.examai.prep"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.examai.app"
+        applicationId "com.examai.prep"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
