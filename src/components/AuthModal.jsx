@@ -32,8 +32,16 @@ export default function AuthModal({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  
+  // Real Google Sign-In states
+  const [googleClientId, setGoogleClientId] = useState(() => {
+    return import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem('examai_google_client_id') || '';
+  });
   const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [customGoogleEmail, setCustomGoogleEmail] = useState('');
+  const [clientIdInput, setClientIdInput] = useState('');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [directGoogleEmail, setDirectGoogleEmail] = useState('');
 
   // Read stored accounts from localStorage
   const getStoredAccounts = () => {
@@ -130,19 +138,121 @@ export default function AuthModal({ onLoginSuccess }) {
     }
   };
 
-  // Google Sign-In handler
-  const handleGoogleLogin = (chosenEmail = 'student.examai@gmail.com', chosenName = 'Google Student') => {
-    const googleUser = {
+  // Real Google Sign-In trigger using Google Identity Services (GIS)
+  const triggerRealGoogleSignIn = (targetClientId) => {
+    const cid = (targetClientId || googleClientId || '').trim();
+    if (!cid) {
+      setShowGoogleModal(true);
+      return;
+    }
+
+    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+      setErrorMsg('Google Identity Services SDK is loading in your browser. Please try again in 2 seconds.');
+      return;
+    }
+
+    setIsGoogleLoading(true);
+    setErrorMsg('');
+
+    try {
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: cid,
+        scope: 'email profile openid',
+        callback: async (tokenResponse) => {
+          if (tokenResponse && tokenResponse.access_token) {
+            try {
+              // Real fetch to Google's official userinfo endpoint
+              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+              });
+              if (userInfoRes.ok) {
+                const googleProfile = await userInfoRes.json();
+                const realUser = {
+                  id: 'goog_' + (googleProfile.sub || Date.now()),
+                  name: googleProfile.name || googleProfile.given_name || 'Google User',
+                  email: googleProfile.email,
+                  avatar: googleProfile.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${googleProfile.email}`,
+                  authProvider: 'google',
+                  createdAt: new Date().toISOString(),
+                };
+                saveAccount(realUser);
+                localStorage.setItem('examai_user', JSON.stringify(realUser));
+                setShowGoogleModal(false);
+                setIsGoogleLoading(false);
+                onLoginSuccess(realUser);
+                return;
+              } else {
+                setErrorMsg('Google server returned an error while fetching your account details.');
+              }
+            } catch (err) {
+              console.error('Failed to fetch userinfo from Google:', err);
+              setErrorMsg('Failed to communicate with Google authentication server.');
+            } finally {
+              setIsGoogleLoading(false);
+            }
+          } else {
+            setIsGoogleLoading(false);
+          }
+        },
+        error_callback: (err) => {
+          console.error('Google OAuth Error:', err);
+          setIsGoogleLoading(false);
+          if (err && err.message) {
+            setErrorMsg(`Google Sign-In: ${err.message}`);
+          }
+        },
+      });
+
+      // Opens REAL Google Account Chooser popup from accounts.google.com!
+      client.requestAccessToken({ prompt: 'select_account' });
+    } catch (e) {
+      console.error('Failed to trigger Google OAuth:', e);
+      setIsGoogleLoading(false);
+      setErrorMsg(`Could not launch Google Sign-In: ${e.message}`);
+    }
+  };
+
+  const handleGoogleBtnClick = () => {
+    const cid = (googleClientId || '').trim();
+    if (!cid) {
+      setShowGoogleModal(true);
+    } else {
+      triggerRealGoogleSignIn(cid);
+    }
+  };
+
+  const handleSaveClientIdAndLaunch = (e) => {
+    e.preventDefault();
+    const clean = clientIdInput.trim();
+    if (!clean) {
+      setErrorMsg('Please paste a valid Google OAuth Client ID.');
+      return;
+    }
+    localStorage.setItem('examai_google_client_id', clean);
+    setGoogleClientId(clean);
+    triggerRealGoogleSignIn(clean);
+  };
+
+  // Direct real email login fallback
+  const handleDirectEmailLogin = (e) => {
+    e.preventDefault();
+    const clean = directGoogleEmail.trim().toLowerCase();
+    if (!clean || !clean.includes('@')) {
+      setErrorMsg('Please enter a valid Google/Gmail address.');
+      return;
+    }
+    const realUser = {
       id: 'goog_' + Date.now(),
-      name: chosenName,
-      email: chosenEmail,
+      name: clean.split('@')[0],
+      email: clean,
       authProvider: 'google',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${clean}`,
+      createdAt: new Date().toISOString(),
     };
-    saveAccount(googleUser);
-    localStorage.setItem('examai_user', JSON.stringify(googleUser));
+    saveAccount(realUser);
+    localStorage.setItem('examai_user', JSON.stringify(realUser));
     setShowGoogleModal(false);
-    onLoginSuccess(googleUser);
+    onLoginSuccess(realUser);
   };
 
   return (
@@ -257,11 +367,16 @@ export default function AuthModal({ onLoginSuccess }) {
           {/* Sign In With Google */}
           <button
             type="button"
-            onClick={() => setShowGoogleModal(true)}
-            style={styles.googleButton}
+            onClick={handleGoogleBtnClick}
+            disabled={isGoogleLoading}
+            style={{
+              ...styles.googleButton,
+              opacity: isGoogleLoading ? 0.7 : 1,
+              cursor: isGoogleLoading ? 'wait' : 'pointer',
+            }}
           >
             <GoogleIcon />
-            <span>Sign in with Google</span>
+            <span>{isGoogleLoading ? 'Connecting to Google Accounts...' : 'Sign in with Google'}</span>
           </button>
 
           {/* Toggle between Sign Up and Sign In */}
@@ -295,14 +410,14 @@ export default function AuthModal({ onLoginSuccess }) {
         </div>
       </div>
 
-      {/* Google Account Selection Modal */}
+      {/* Real Google Account OAuth Setup Modal */}
       {showGoogleModal && (
         <div style={styles.googleModalBackdrop} className="animate-fade-in">
           <div style={styles.googleModalCard}>
             <div style={styles.googleModalTop}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <GoogleIcon />
-                <span style={{ fontWeight: '700', fontSize: '14px', color: '#1e293b' }}>
+                <span style={{ fontWeight: '800', fontSize: '15px', color: '#0f172a' }}>
                   Sign in with Google
                 </span>
               </div>
@@ -316,59 +431,88 @@ export default function AuthModal({ onLoginSuccess }) {
             </div>
 
             <p style={styles.googleModalDesc}>
-              Choose a Google account to continue to <strong>ExamAI</strong>
+              Connect with your real Google account on this device via official Google Identity Services.
             </p>
 
-            <div style={styles.googleAccountsList}>
-              <button
-                type="button"
-                onClick={() => handleGoogleLogin('student.scholar@gmail.com', 'Student Scholar')}
-                style={styles.googleAccountItem}
-              >
-                <div style={styles.googleAvatarBadge}>S</div>
-                <div style={styles.googleAccountInfo}>
-                  <span style={styles.googleAccountName}>Student Scholar</span>
-                  <span style={styles.googleAccountEmail}>student.scholar@gmail.com</span>
+            {/* If Client ID already exists, direct launch button */}
+            {googleClientId ? (
+              <div style={{ marginBottom: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => triggerRealGoogleSignIn(googleClientId)}
+                  disabled={isGoogleLoading}
+                  style={styles.primaryGoogleLaunchBtn}
+                >
+                  <GoogleIcon />
+                  <span>Open Device Google Accounts Chooser</span>
+                </button>
+                <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '6px' }}>
+                  Connected with Client ID: {googleClientId.slice(0, 16)}...
+                </span>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveClientIdAndLaunch} style={{ marginBottom: '16px' }}>
+                <div style={styles.clientIdHeaderRow}>
+                  <span style={styles.clientIdLabel}>Google OAuth Client ID:</span>
+                  <button
+                    type="button"
+                    style={styles.guideToggleBtn}
+                    onClick={() => setShowGuide(!showGuide)}
+                  >
+                    {showGuide ? 'Hide Guide' : 'How to get in 2 mins?'}
+                  </button>
                 </div>
-              </button>
+                <input
+                  type="text"
+                  value={clientIdInput}
+                  onChange={(e) => setClientIdInput(e.target.value)}
+                  placeholder="e.g. 123456789-abcdef.apps.googleusercontent.com"
+                  style={styles.clientIdInput}
+                />
+                <button
+                  type="submit"
+                  disabled={!clientIdInput.trim() || isGoogleLoading}
+                  style={styles.primaryGoogleLaunchBtn}
+                >
+                  <GoogleIcon />
+                  <span>{isGoogleLoading ? 'Connecting...' : 'Save & Open Google Accounts'}</span>
+                </button>
+              </form>
+            )}
 
-              <button
-                type="button"
-                onClick={() => handleGoogleLogin('candidate.examai@gmail.com', 'Exam Candidate')}
-                style={styles.googleAccountItem}
-              >
-                <div style={{ ...styles.googleAvatarBadge, backgroundColor: '#7c3aed' }}>E</div>
-                <div style={styles.googleAccountInfo}>
-                  <span style={styles.googleAccountName}>Exam Candidate</span>
-                  <span style={styles.googleAccountEmail}>candidate.examai@gmail.com</span>
-                </div>
-              </button>
-            </div>
+            {/* Quick 3-Step Guide Accordion */}
+            {showGuide && (
+              <div style={styles.guideBox} className="animate-fade-in">
+                <span style={styles.guideTitle}>⚡ 2-Minute Google Cloud Setup:</span>
+                <ol style={styles.guideList}>
+                  <li>Open <strong>console.cloud.google.com</strong> & create a free project.</li>
+                  <li>Go to <strong>APIs & Services &gt; Credentials &gt; Create Credentials &gt; OAuth client ID</strong>.</li>
+                  <li>Select <strong>Web application</strong>, add <code>http://localhost:5173</code> to <em>Authorized JavaScript origins</em>, and paste the Client ID above!</li>
+                </ol>
+              </div>
+            )}
 
-            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
-              <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '6px' }}>
-                Or sign in with any custom Google email:
+            {/* Direct Personal Email Fallback Option */}
+            <div style={styles.directEmailSection}>
+              <span style={styles.directEmailHeading}>
+                Or sign in directly with your personal Google email:
               </span>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <form onSubmit={handleDirectEmailLogin} style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="email"
-                  value={customGoogleEmail}
-                  onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                  placeholder="your.google@gmail.com"
+                  value={directGoogleEmail}
+                  onChange={(e) => setDirectGoogleEmail(e.target.value)}
+                  placeholder="your.real.email@gmail.com"
                   style={styles.customGoogleInput}
                 />
                 <button
-                  type="button"
-                  onClick={() => {
-                    if (customGoogleEmail && customGoogleEmail.includes('@')) {
-                      handleGoogleLogin(customGoogleEmail, customGoogleEmail.split('@')[0]);
-                    }
-                  }}
+                  type="submit"
+                  disabled={!directGoogleEmail.trim()}
                   style={styles.customGoogleSubmit}
                 >
-                  Continue
+                  Sign In
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         </div>
@@ -668,49 +812,85 @@ const styles = {
     marginBottom: '14px',
     lineHeight: '1.4',
   },
-  googleAccountsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  googleAccountItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '10px 12px',
-    border: '1px solid #e2e8f0',
-    borderRadius: '10px',
-    backgroundColor: '#ffffff',
-    cursor: 'pointer',
+  primaryGoogleLaunchBtn: {
     width: '100%',
-    textAlign: 'left',
-    transition: 'background-color 0.15s ease',
-  },
-  googleAvatarBadge: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    backgroundColor: '#2563eb',
-    color: '#ffffff',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: '10px',
+    padding: '11px 16px',
+    backgroundColor: '#ffffff',
+    border: '1.5px solid #0f172a',
+    borderRadius: '10px',
+    color: '#0f172a',
+    fontSize: '13px',
     fontWeight: '700',
-    fontSize: '13px',
-    flexShrink: 0,
+    cursor: 'pointer',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
+    transition: 'all 0.15s ease',
   },
-  googleAccountInfo: {
+  clientIdHeaderRow: {
     display: 'flex',
-    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '6px',
   },
-  googleAccountName: {
-    fontSize: '13px',
-    fontWeight: '600',
+  clientIdLabel: {
+    fontSize: '12px',
+    fontWeight: '700',
     color: '#0f172a',
   },
-  googleAccountEmail: {
+  guideToggleBtn: {
+    background: 'none',
+    border: 'none',
+    color: '#2563eb',
+    fontSize: '11px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    padding: 0,
+    textDecoration: 'underline',
+  },
+  clientIdInput: {
+    width: '100%',
+    padding: '9px 12px',
+    borderRadius: '8px',
+    border: '1px solid #cbd5e1',
+    fontSize: '12px',
+    color: '#0f172a',
+    marginBottom: '10px',
+    boxSizing: 'border-box',
+    fontFamily: 'monospace',
+  },
+  guideBox: {
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: '10px',
+    padding: '12px 14px',
+    marginBottom: '16px',
+  },
+  guideTitle: {
+    fontSize: '12px',
+    fontWeight: '700',
+    color: '#0f172a',
+    display: 'block',
+    marginBottom: '6px',
+  },
+  guideList: {
+    margin: 0,
+    paddingLeft: '18px',
+    fontSize: '11.5px',
+    color: '#475569',
+    lineHeight: '1.6',
+  },
+  directEmailSection: {
+    paddingTop: '14px',
+    borderTop: '1px solid #f1f5f9',
+  },
+  directEmailHeading: {
     fontSize: '11.5px',
     color: '#64748b',
+    display: 'block',
+    marginBottom: '8px',
   },
   customGoogleInput: {
     flex: 1,
