@@ -9,12 +9,12 @@ export function getApiKey() {
 
 // High-availability models pool (Real v1beta Google Gemini API models)
 const ACTIVE_MODELS = [
-  'gemini-flash-lite-latest',
-  'gemini-3.5-flash-lite',
   'gemini-3.1-flash-lite',
-  'gemini-3.7-flash',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3.5-flash-lite',
+  'gemini-3-flash-preview',
   'gemini-3.6-flash',
-  'gemini-flash-latest',
+  'gemini-flash-lite-latest',
 ];
 
 // Anti-duplication question memory per topic
@@ -936,16 +936,23 @@ Please answer the student's follow-up doubt directly, warmly, and clearly based 
   }
 
   for (const model of ACTIVE_MODELS) {
+    let timeoutId = null;
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 8500);
+
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: conversationParts }],
-          generationConfig: { temperature: 0.25 },
+          generationConfig: { temperature: 0.25, maxOutputTokens: 1200 },
         }),
+        signal: controller.signal,
       });
+
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (res.ok) {
         const data = await res.json();
@@ -953,8 +960,12 @@ Please answer the student's follow-up doubt directly, warmly, and clearly based 
         if (text) {
           return sanitizeMathText(text);
         }
+      } else {
+        const errBody = await res.text();
+        console.warn(`Model ${model} returned ${res.status}:`, errBody.slice(0, 100));
       }
     } catch (err) {
+      if (timeoutId) clearTimeout(timeoutId);
       console.warn(`Model ${model} failed for AI tutor:`, err.message);
     }
   }
