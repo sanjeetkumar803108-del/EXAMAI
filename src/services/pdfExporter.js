@@ -266,29 +266,48 @@ export function parseQuestionBlocks(rawText) {
   if (!rawText) return [];
   let text = String(rawText);
 
-  // Normalize inline tables: split concatenated rows like `| val1 | val2 | | val3 | val4 |`
-  text = text.replace(/\|\s*\|\s*/g, '|\n|');
+  // Normalize inline concatenated rows: e.g. `| a | b | | c | d |` -> split into newlines
+  text = text.replace(/\|\s*(?=\|)/g, '|\n');
 
-  // Insert line breaks before and after embedded tables so markdown parser isolates table rows
-  text = text.replace(/([^\n|])\s*(\|[\s\S]*?\|)\s*([^\n|])/g, '$1\n$2\n$3');
+  // If a line has non-pipe text immediately followed by a markdown table row `| col1 | col2 |`,
+  // insert a newline before the table row.
+  text = text.replace(/^([^|\r\n]+?)(\s*\|[^\r\n]+?\|)\s*$/gm, (match, prefix, tablePart) => {
+    if (tablePart.trim().slice(1, -1).includes('|')) {
+      return prefix.trim() + '\n' + tablePart.trim();
+    }
+    return match;
+  });
 
-  const lines = text.split('\n');
+  // If a line has a markdown table row followed by non-pipe text at the end:
+  text = text.replace(/^(\|[^\r\n]+?\|)\s*([^|\r\n]+)$/gm, (match, tablePart, suffix) => {
+    if (tablePart.trim().slice(1, -1).includes('|')) {
+      return tablePart.trim() + '\n' + suffix.trim();
+    }
+    return match;
+  });
+
+  const lines = text.split(/\r?\n/);
   const blocks = [];
   let currentTable = null;
   let currentText = [];
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (line.startsWith('|') && line.endsWith('|') && line.split('|').length > 2) {
+    const trimmed = lines[i].trim();
+    // A table row must start with '|', end with '|', and have at least 2 cells (contain internal '|')
+    const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2 && trimmed.slice(1, -1).includes('|');
+
+    if (isTableRow) {
       if (currentText.length > 0) {
         const joined = currentText.join('\n').trim();
         if (joined) blocks.push({ type: 'text', content: joined });
         currentText = [];
       }
       if (!currentTable) currentTable = [];
-      // Skip delimiter lines like |---|---|
-      if (!/^\|[\s\-:|]+\|$/.test(line)) {
-        const cells = line
+
+      // Check if it's a delimiter/separator row like |:---|:---| or |---|---|
+      const isSeparator = /^\|[\s\-:|]+\|$/.test(trimmed);
+      if (!isSeparator) {
+        const cells = trimmed
           .slice(1, -1)
           .split('|')
           .map((c) => c.trim());
@@ -301,8 +320,8 @@ export function parseQuestionBlocks(rawText) {
         blocks.push({ type: 'table', rows: currentTable });
         currentTable = null;
       }
-      if (line) {
-        currentText.push(line);
+      if (trimmed) {
+        currentText.push(lines[i]);
       }
     }
   }
@@ -383,15 +402,17 @@ export function exportExamToPDF(paper) {
 
     rows.forEach((row, rIdx) => {
       // Step 1: Pre-wrap text for each cell and measure maximum lines
-      const cellData = row.map((cell, cIdx) => {
+      const cellData = [];
+      for (let cIdx = 0; cIdx < numCols; cIdx++) {
+        const cell = row[cIdx] !== undefined ? row[cIdx] : '';
         const cWidth = colWidths[cIdx] || (totalWidth / numCols);
         const cellText = cleanForPDF(cell);
         const wrapped = doc.splitTextToSize(cellText, cWidth - 4);
-        return {
-          textLines: wrapped,
+        cellData.push({
+          textLines: wrapped.length > 0 ? wrapped : [' '],
           width: cWidth,
-        };
-      });
+        });
+      }
 
       const maxLines = Math.max(1, ...cellData.map((cd) => cd.textLines.length));
       const rowHeight = Math.max(6.5, maxLines * 3.6 + 3);
@@ -669,10 +690,21 @@ export function exportExamToPDF(paper) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8.2);
         doc.setTextColor(30, 41, 59);
-        const cleanedAns = cleanForPDF(q.correctAnswer);
-        const ansLines = doc.splitTextToSize(`Ans: ${cleanedAns}`, contentWidth);
-        doc.text(ansLines, margin, y);
-        y += ansLines.length * 3.6 + 1.5;
+        const ansBlocks = parseQuestionBlocks(q.correctAnswer);
+        ansBlocks.forEach((b, bIdx) => {
+          if (b.type === 'text') {
+            const cleanedAns = cleanForPDF(b.content);
+            if (cleanedAns.trim()) {
+              const prefix = bIdx === 0 ? 'Ans: ' : '';
+              const ansLines = doc.splitTextToSize(`${prefix}${cleanedAns}`, contentWidth);
+              checkPageBreak(ansLines.length * 3.6 + 1.5);
+              doc.text(ansLines, margin, y);
+              y += ansLines.length * 3.6 + 1.5;
+            }
+          } else if (b.type === 'table' && b.rows.length > 0) {
+            renderTableBlock(b.rows, contentWidth, margin);
+          }
+        });
 
         // Step marking scheme
         if (q.stepMarkingScheme && q.stepMarkingScheme.length > 0) {

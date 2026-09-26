@@ -351,11 +351,18 @@ NON-NEGOTIABLE COMPLIANCE & QUALITY RULES ACROSS ALL EXAM BOARDS:
 1. AUTHENTIC QUESTION TYPOLOGY IMPLEMENTATION:
    - ASSERTION-REASON QUESTIONS:
      If the exam is CBSE, NEET, AIIMS, or competitive STEM, include 1-2 authentic Assertion-Reason questions in the objective section:
-     "Directions: A statement of Assertion (A) is followed by a statement of Reason (R). Choose:
-     A) Both (A) and (R) are true, and (R) is the correct explanation of (A).
-     B) Both (A) and (R) are true, but (R) is not the correct explanation of (A).
-     C) (A) is true, but (R) is false.
-     D) (A) is false, but (R) is true."
+     In 'text', ONLY write the context, Assertion (A), and Reason (R). Example:
+     "Directions: In the following question, a statement of Assertion (A) is followed by a statement of Reason (R).
+     Assertion (A): ...
+     Reason (R): ..."
+     CRITICAL: DO NOT embed choices A), B), C), D) inside 'text'.
+     Supply the 4 choices strictly in 'options':
+     [
+       "A) Both (A) and (R) are true, and (R) is the correct explanation of (A).",
+       "B) Both (A) and (R) are true, but (R) is not the correct explanation of (A).",
+       "C) (A) is true, but (R) is false.",
+       "D) (A) is false, but (R) is true."
+     ]
    - NUMERICAL VALUE / INTEGER QUESTIONS:
      If a section has format NUMERICAL (e.g., JEE Main Section B, SAT Grid-in, GATE):
      DO NOT generate options ('options': []). The question must ask the candidate to compute a numerical value. 'correctAnswer' must be the exact calculated numerical value (e.g. '12' or '4.5') with complete step-by-step working in the rubric.
@@ -471,6 +478,13 @@ Format response ONLY as valid JSON matching this schema:
 
       // Sanitize question text, answer, and explanation
       q.text = sanitizeMathText(q.text);
+
+      // Prevent duplicate option blocks inside Assertion-Reason question text
+      if (q.type === 'mcq' && Array.isArray(q.options) && q.options.length > 0) {
+        if (/Assertion\s*\(A\)/i.test(q.text) && /Reason\s*\(R\)/i.test(q.text)) {
+          q.text = q.text.replace(/(?:Choose(?:\s+the\s+correct(?:\s+alternative|\s+option)?)?:?\s*\n*)?(?:^[A-D]\s*[\).:-]\s*[^\n]+(?:\r?\n|$)){3,5}/gim, '').trim();
+        }
+      }
       if (q.correctAnswer) q.correctAnswer = sanitizeMathText(q.correctAnswer);
       if (q.explanation) q.explanation = sanitizeMathText(q.explanation);
       if (q.stepMarkingScheme) {

@@ -1,56 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Clock, CheckCircle, Eye, EyeOff, Sparkles, FileText, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
-import { exportExamToPDF, parseQuestionBlocks } from '../services/pdfExporter';
+import { exportExamToPDF } from '../services/pdfExporter';
 import MathRenderer from './MathRenderer';
-
-function FormattedQuestionBody({ text }) {
-  const blocks = parseQuestionBlocks(text);
-
-  return (
-    <div style={styles.questionBodyWrapper}>
-      {blocks.map((block, bIdx) => {
-        if (block.type === 'text') {
-          return (
-            <div key={bIdx} style={styles.questionText}>
-              <MathRenderer text={block.content} />
-            </div>
-          );
-        }
-        if (block.type === 'table' && block.rows.length > 0) {
-          const headerRow = block.rows[0];
-          const dataRows = block.rows.slice(1);
-          return (
-            <div key={bIdx} style={styles.tableCard}>
-              <table style={styles.dataTable}>
-                <thead>
-                  <tr>
-                    {headerRow.map((cell, cIdx) => (
-                      <th key={cIdx} style={styles.dataTh}>
-                        <MathRenderer text={cell} />
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataRows.map((row, rIdx) => (
-                    <tr key={rIdx} style={rIdx % 2 === 1 ? { backgroundColor: '#f8fafc' } : {}}>
-                      {row.map((cell, cIdx) => (
-                        <td key={cIdx} style={styles.dataTd}>
-                          <MathRenderer text={cell} />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        }
-        return null;
-      })}
-    </div>
-  );
-}
+import FormattedQuestionBody from './FormattedQuestionBody';
 
 export default function ExamPaperView({ paper, onEvaluate, onReset }) {
   const [studentAnswers, setStudentAnswers] = useState({});
@@ -245,9 +197,7 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
                   <BookOpen size={14} color="#2563eb" />
                   <span style={styles.passageTitle}>Reading Passage / Reference Context</span>
                 </div>
-                <div style={styles.passageText}>
-                  <MathRenderer text={section.passage} />
-                </div>
+                <FormattedQuestionBody text={section.passage} customTextStyle={styles.passageText} />
               </div>
             )}
 
@@ -325,9 +275,7 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
                           <CheckCircle size={13} color="#10b981" />
                           <span style={styles.solTitle}>Official Solution & Step Rubric</span>
                         </div>
-                        <div style={styles.solText}>
-                          <MathRenderer text={q.correctAnswer} />
-                        </div>
+                        <FormattedQuestionBody text={q.correctAnswer} customTextStyle={styles.solText} />
 
                         {q.stepMarkingScheme && (
                           <div style={styles.rubricSteps}>

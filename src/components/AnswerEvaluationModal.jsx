@@ -1,6 +1,7 @@
 import React from 'react';
 import { Award, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Download, Sparkles } from 'lucide-react';
 import MathRenderer from './MathRenderer';
+import FormattedQuestionBody from './FormattedQuestionBody';
 
 export default function AnswerEvaluationModal({ evaluation, onClose }) {
   if (!evaluation) return null;
@@ -77,7 +78,7 @@ export default function AnswerEvaluationModal({ evaluation, onClose }) {
                 <div style={styles.feedbackBox}>
                   <span style={styles.feedbackLabel}>Examiner Remarks:</span>
                   <div style={styles.feedbackText}>
-                    <MathRenderer text={q.feedback} />
+                    <FormattedQuestionBody text={q.feedback} />
                   </div>
                 </div>
 
@@ -108,13 +109,13 @@ export default function AnswerEvaluationModal({ evaluation, onClose }) {
                   <div style={styles.ansBox}>
                     <span style={styles.ansLabel}>Your Submission:</span>
                     <div style={styles.ansContent}>
-                      <MathRenderer text={q.studentAnswer || '— No response provided —'} />
+                      <FormattedQuestionBody text={q.studentAnswer || '— No response provided —'} />
                     </div>
                   </div>
                   <div style={{ ...styles.ansBox, backgroundColor: '#f8fafc' }}>
                     <span style={styles.ansLabel}>Official Model Answer:</span>
                     <div style={styles.ansContent}>
-                      <MathRenderer text={q.officialAnswer} />
+                      <FormattedQuestionBody text={q.officialAnswer} />
                     </div>
                   </div>
                 </div>
