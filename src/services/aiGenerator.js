@@ -9,10 +9,12 @@ export function getApiKey() {
 
 // High-availability models pool (Real v1beta Google Gemini API models)
 const ACTIVE_MODELS = [
-  'gemini-flash-latest',
   'gemini-flash-lite-latest',
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-8b',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-flash-latest',
 ];
 
 // Anti-duplication question memory per topic
@@ -76,7 +78,7 @@ Provide the real, official examination blueprint and structure:
    - Does this exam have Numerical Value / Integer questions without options?
    - Does this exam have Case-Based / Data-Based integrated questions?
    - Does this exam have multi-part Free-Response (FRQ) questions with sub-rubrics?
-7. Scope & Test Calibration:
+6. Scope & Test Calibration:
    - Determine if "${topic}" is a Single Chapter / Specific Topic OR a Full-Syllabus Mock Exam.
    - For a Single Chapter / Specific Topic (e.g. "The Necklace", "Thermodynamics", "Organic Chemistry"):
      Calibrate as an official Chapter Mastery & Unit Assessment for ${exam} (${country}):
@@ -84,6 +86,9 @@ Provide the real, official examination blueprint and structure:
      * Provide a diverse, non-repetitive distribution: Objective/MCQ check, Short Conceptual questions, 1 Case-Based/Extract study, and 1-2 Long Analytical questions.
    - For Full-Syllabus / Broad Mock Exams (e.g. "Full Syllabus", "All Units", "Final Mock Paper"):
      Replicate the full official board examination with exact official total marks (e.g. CBSE 80 Marks / 3 Hours, CBSE Science 70 Marks, JEE Main 300 Marks, NEET 720 Marks, AP 100 Composite, SAT 800) and full section allotments.
+7. High-Yield PYQs & Examiner Focus:
+   - Identify 3-5 recurring question types, derivations, or problem patterns asked by this board for "${topic}" in recent board/competitive papers.
+   - Identify common conceptual traps or pitfalls examiners test students on.
 
 Output ONLY valid JSON matching this schema:
 {
@@ -117,7 +122,9 @@ Output ONLY valid JSON matching this schema:
     }
   ],
   "markingRules": ["Rule 1", "Rule 2"],
-  "coreConcepts": ["Concept 1", "Concept 2"]
+  "coreConcepts": ["Concept 1", "Concept 2"],
+  "pyqTrends": ["Recurring Pattern 1", "Recurring Pattern 2"],
+  "examinerFocus": ["Examiner Focus 1", "Common Trap 2"]
 }`;
 
   let researchResult = null;
@@ -343,6 +350,8 @@ LIVE RESEARCH BLUEPRINT:
 - Calculator Policy: ${calculatorPolicy}
 - Topic / Chapter to test: "${topic}"
 - Core Syllabus Concepts: ${researchData?.coreConcepts ? researchData.coreConcepts.join(', ') : topic}
+- Recurring PYQ Trends & Board Patterns: ${researchData?.pyqTrends ? researchData.pyqTrends.join('; ') : 'Standard past board examination problem formats'}
+- Examiner Focus & Conceptual Traps: ${researchData?.examinerFocus ? researchData.examinerFocus.join('; ') : 'Core derivations and numerical problem solving'}
 - Official Section Structure:
 ${sectionsBlueprintDescription}
 
