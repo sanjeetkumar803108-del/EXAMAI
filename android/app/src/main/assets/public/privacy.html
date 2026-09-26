@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy - AP Exam App</title>
+  <link rel="icon" type="image/png" href="./logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Public+Sans:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card-bg: #111827;
+      --border: #1f2937;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.15);
+      --accent: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.7;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    @media (min-width: 640px) {
+      body { padding: 48px 24px; }
+      .container { padding: 56px 48px; }
+    }
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-blue {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    h1 {
+      font-family: 'Public Sans', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+    @media (min-width: 640px) {
+      h1 { font-size: 34px; }
+    }
+    .meta {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .highlight-card {
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 24px 0 32px;
+    }
+    .highlight-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #60a5fa;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .highlight-card p {
+      font-size: 13px;
+      color: #cbd5e1;
+      margin: 0;
+      line-height: 1.6;
+    }
+    .callout-box {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      font-size: 13px;
+      color: #d1fae5;
+    }
+    .callout-box strong {
+      color: #34d399;
+    }
+    h2 {
+      font-size: 19px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 36px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 4px solid var(--primary);
+      padding-left: 12px;
+      letter-spacing: -0.01em;
+    }
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    p {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      margin-bottom: 14px;
+      line-height: 1.7;
+    }
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+    }
+    li {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+    li strong {
+      color: #ffffff;
+    }
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      margin: 20px 0;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .table-box {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      min-width: 600px;
+    }
+    .table-box th, .table-box td {
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .table-box th {
+      background: rgba(255, 255, 255, 0.04);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .table-box td {
+      color: #cbd5e1;
+    }
+    .footer {
+      border-top: 1px solid var(--border);
+      padding-top: 28px;
+      margin-top: 44px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    .toc {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 28px;
+      font-size: 13px;
+    }
+    .toc-title {
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px 16px;
+    }
+    @media (min-width: 640px) {
+      .toc-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .toc-grid a {
+      color: #94a3b8;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .toc-grid a:hover {
+      color: #60a5fa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge-row">
+        <span class="badge">🛡️ Student Privacy & US Legal Standards</span>
+        <span class="badge badge-blue">📱 Google Play & Apple App Store Certified</span>
+      </div>
+      <h1>Privacy Policy</h1>
+      <div class="meta">Last Updated & Effective Date: September 14, 2026 • Version 3.0 (US & Global Standards)</div>
+    </div>
+
+    <div class="highlight-card">
+      <h3>🌟 100% Ad-Free, No Data-Selling & Zero AI Model Training Commitment</h3>
+      <p>
+        <strong>AP Exam App</strong> is built solely to empower high school students to achieve mastery in Advanced Placement® (AP®) coursework and exams. We do <strong>NOT</strong> sell, rent, or trade your personal data. We do <strong>NOT</strong> serve third-party behavioral advertisements. Your uploaded homework photos, handwritten answers, and study notes are <strong>NEVER used to train, retrain, or improve public AI foundation models</strong>.
+      </p>
+    </div>
+
+    <div class="toc">
+      <div class="toc-title">Table of Contents</div>
+      <div class="toc-grid">
+        <a href="#sec-1">1. Introduction & Overview</a>
+        <a href="#sec-2">2. Camera & Photo Data Processing</a>
+        <a href="#sec-3">3. AI Tutoring & Multimodal Inference</a>
+        <a href="#sec-4">4. 1v1 Multiplayer Quiz Battle Privacy</a>
+        <a href="#sec-5">5. Information We Collect Directly</a>
+        <a href="#sec-6">6. Device Storage & Permissions</a>
+        <a href="#sec-7">7. Third-Party Partners & Infrastructure</a>
+        <a href="#sec-8">8. Children's Privacy (COPPA)</a>
+        <a href="#sec-9">9. Student Educational Records (FERPA)</a>
+        <a href="#sec-10">10. US State Privacy Rights (CCPA/CPRA)</a>
+        <a href="#sec-11">11. In-App Purchases & Subscriptions</a>
+        <a href="#sec-12">12. Data Security & Storage Protocol</a>
+        <a href="#sec-13">13. Retention & Account Deletion</a>
+        <a href="#sec-14">14. Push & Local Notifications</a>
+        <a href="#sec-15">15. Policy Updates & Contact Desk</a>
+      </div>
+    </div>
+
+    <!-- Section 1 -->
+    <h2 id="sec-1">1. Introduction & Overview</h2>
+    <p>
+      This Privacy Policy governs the manner in which <strong>AP Exam App</strong> ("we", "us", "our", or the "Application") collects, uses, protects, and discloses information gathered from users ("you", "Student", or "User") across our mobile applications (Android / iOS) and web services (<a href="https://ap-exam-five.vercel.app" style="color: var(--primary);">https://ap-exam-five.vercel.app</a>).
+    </p>
+    <p>
+      We comply strictly with United States federal and state privacy statutes, including the <strong>Children's Online Privacy Protection Act (COPPA)</strong>, <strong>Family Educational Rights and Privacy Act (FERPA)</strong> standards, the <strong>California Consumer Privacy Act as amended by the California Privacy Rights Act (CCPA/CPRA)</strong>, and mobile application developer policies established by the <strong>Google Play Developer Distribution Agreement</strong> and <strong>Apple App Store Review Guidelines (Guideline 5.1.1 & 5.1.2)</strong>.
+    </p>
+
+    <!-- Section 2 -->
+    <h2 id="sec-2">2. Camera, Photos & Document Image Data Handling</h2>
+    <p>
+      AP Exam App incorporates the <strong>Magic Scanner™</strong> and <strong>FRQ Grader™</strong> to assist students with difficult math, science, history, and literature problems. Below is an exhaustive disclosure of how camera and photo data is gathered, processed, and safeguarded:
+    </p>
+
+    <h3>A. Purpose of Camera & Photo Access</h3>
+    <ul>
+      <li><strong>Camera Access (`android.permission.CAMERA` / iOS `NSCameraUsageDescription`):</strong> Requested solely when you actively open the Magic Scanner to capture a real-time photograph of a physical homework assignment, textbook equation, graph, or handwritten AP Free-Response Question (FRQ) answer sheet.</li>
+      <li><strong>Photo Gallery Access (`android.permission.READ_MEDIA_IMAGES` / iOS `NSPhotoLibraryUsageDescription`):</strong> Requested solely when you tap the "Upload from Gallery" button to select an existing photo or screenshot of a study problem from your device.</li>
+    </ul>
+
+    <h3>B. On-Device Compression & Memory Processing</h3>
+    <ul>
+      <li><strong>Client-Side Optimization:</strong> Before leaving your phone, images are compressed on-device (resized to max 1200px and converted to optimized JPEG format) to minimize data consumption and prevent unnecessary network footprint.</li>
+      <li><strong>In-Memory Volatile Processing:</strong> When an image is uploaded for analysis, our server receives it directly into a transient memory buffer (RAM via `multer.memoryStorage()`). <strong>Images are NEVER written to a permanent disk, public web directory, or persistent server database.</strong></li>
+      <li><strong>Immediate Buffer Purging:</strong> Once the optical character recognition (OCR) and pedagogical explanation are generated and streamed back to your screen, the in-memory image buffer is immediately flushed and garbage-collected. We do not maintain any long-term repository of student photographs.</li>
+    </ul>
+
+    <h3>C. Prohibition of Facial Recognition & Biometric Surveillance</h3>
+    <div class="callout-box">
+      <strong>Strict Non-Biometric Guarantee:</strong> The Application uses camera inputs strictly for document OCR and academic problem transcription. We do <strong>NOT</strong> perform facial recognition, facial landmark detection, emotional profiling, iris scanning, or biometric identification. If a student's photo inadvertently contains a human face, our algorithms ignore facial features and extract only academic text and symbols.
+    </div>
+
+    <!-- Section 3 -->
+    <h2 id="sec-3">3. AI Tutoring & Multimodal Inference Transparency</h2>
+    <p>
+      The Application leverages advanced enterprise multimodal artificial intelligence models, powered by <strong>Google Gemini AI APIs</strong>, to deliver step-by-step problem explanations, AP rubric grading, formula breakdowns, and the <em>AP Trap Radar™</em> distractor diagnostic.
+    </p>
+    <ul>
+      <li><strong>Zero Model Training Guarantee:</strong> Under our direct Enterprise API agreements with Google Cloud, <strong>your prompts, typed questions, uploaded homework images, handwriting scans, and chat conversations are NEVER used to train, retrain, fine-tune, or improve Google's public foundation models</strong> or any proprietary third-party AI models.</li>
+      <li><strong>Stateless Academic Inference:</strong> AI inference sessions are stateless. Data sent to the endpoint is evaluated solely to deliver immediate pedagogical guidance and is not cataloged for cross-user profiling.</li>
+      <li><strong>Voice Tutor Speech Processing:</strong> When using the AI Voice Tutor, voice input is processed into text tokens transiently and immediately discarded. We do not generate, archive, or analyze voiceprints or biometric audio patterns.</li>
+    </ul>
+
+    <!-- Section 4 -->
+    <h2 id="sec-4">4. 1v1 Multiplayer Quiz Battle Privacy</h2>
+    <p>
+      AP Exam App features a real-time multiplayer arena where students test their knowledge in 5-round rapid-fire AP quiz battles:
+    </p>
+    <ul>
+      <li><strong>Pseudonymous Public Profiles:</strong> Multiplayer battles display only your chosen nickname or display name (e.g., "Student", "Alex"), your avatar symbol, and your selected AP grade level (e.g., "11th Grade • AP Scholar").</li>
+      <li><strong>No Geolocation Tracking:</strong> We do <strong>NOT</strong> collect, track, or share GPS coordinates, physical locations, or IP-derived street addresses during matchmaking.</li>
+      <li><strong>No In-Game Chat or Private Messaging:</strong> To guarantee minor safety and eliminate cyberbullying, the 1v1 battle feature has <strong>NO open text chat</strong>, direct messaging, or private communications between opponents. Interaction is strictly limited to synchronized multiple-choice quiz questions.</li>
+      <li><strong>Anonymous / Guest Play:</strong> Students can participate in 1v1 Quick Matches in Guest Mode without ever linking an email address or creating an account.</li>
+      <li><strong>Ephemeral Matchmaking Rooms:</strong> Matchmaking tickets and game rooms are stored in transient server memory and are automatically expunged after battle completion or 25 seconds of inactivity.</li>
+    </ul>
+
+    <!-- Section 5 -->
+    <h2 id="sec-5">5. Information We Collect Directly</h2>
+    <div class="table-responsive">
+      <table class="table-box">
+        <thead>
+          <tr>
+            <th>Data Category</th>
+            <th>Specific Data Points Collected</th>
+            <th>Purpose & Legal Basis</th>
+            <th>Retention Period</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Account & Authentication</strong></td>
+            <td>Email address, display name, avatar initial, Firebase UID, or Google Sign-In identifier. (Optional in Guest Mode)</td>
+            <td>Account creation, multi-device synchronization, and secure password recovery.</td>
+            <td>Retained until account deletion.</td>
+          </tr>
+          <tr>
+            <td><strong>Academic Study Data</strong></td>
+            <td>Selected AP subjects, quiz performance, XP points, study coins, daily streaks, mistake vault bookmarks.</td>
+            <td>Providing customized study quest paths, spaced repetition, and tracking mastery.</td>
+            <td>Stored locally on device and in private cloud document.</td>
+          </tr>
+          <tr>
+            <td><strong>Uploaded Study Images</strong></td>
+            <td>Photographs of textbook pages, math formulas, homework problems, and handwritten FRQ responses.</td>
+            <td>Academic OCR, step-by-step problem solving, and handwritten rubric grading.</td>
+            <td><strong>Transient (In-Memory Only).</strong> Cleared immediately after response stream completes.</td>
+          </tr>
+          <tr>
+            <td><strong>In-App Purchase Metadata</strong></td>
+            <td>Subscription status (Pro Monthly / Pro Yearly), VIP pass status, store transaction receipt tokens.</td>
+            <td>Unlocking premium study tools and receipt verification via RevenueCat / Google Play. <em>We never see or store credit cards.</em></td>
+            <td>Duration of active subscription + statutory tax record requirements.</td>
+          </tr>
+          <tr>
+            <td><strong>Diagnostic & Crash Data</strong></td>
+            <td>Pseudonymous device model, OS version, app version, error stack traces (via Firebase Crashlytics).</td>
+            <td>Identifying software crashes, resolving freeze bugs, and optimizing app speed.</td>
+            <td>Aggregated and retained for up to 90 days.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 6 -->
+    <h2 id="sec-6">6. Device Storage & Permissions</h2>
+    <p>
+      The Application requests access to select hardware capabilities strictly to fulfill core study functions:
+    </p>
+    <ul>
+      <li><strong>Local Document Storage & PDF Generation (`@capacitor/filesystem`):</strong> The app generates offline AP formula sheets, cram cheat sheets, and practice exam PDFs. These are saved directly to your device's local Downloads or Documents directory so you can print them or study without an internet connection.</li>
+      <li><strong>Haptics & Vibration (`@capacitor/haptics`):</strong> Provides gentle tactile feedback when you lock in an answer or answer correctly during quiz battles. No data is collected or transmitted.</li>
+      <li><strong>Network State (`@capacitor/network`):</strong> Monitors whether your device is connected to Wi-Fi, cellular, or offline, allowing the app to smoothly switch to offline study mode.</li>
+    </ul>
+
+    <!-- Section 7 -->
+    <h2 id="sec-7">7. Third-Party Service Providers & Subprocessors</h2>
+    <p>
+      We partner exclusively with verified, enterprise-grade cloud infrastructure providers adhering to ISO 27001, SOC 2 Type II, and strict student data privacy standards:
+    </p>
+    <div class="table-responsive">
+      <table class="table-box">
+        <thead>
+          <tr>
+            <th>Subprocessor</th>
+            <th>Role in the Service</th>
+            <th>Data Processed</th>
+            <th>Privacy Policy Reference</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Google Cloud / Gemini AI</strong></td>
+            <td>Academic problem solving, LaTeX formula formatting, OCR, FRQ grading.</td>
+            <td>Transient in-memory prompts and study photos (Zero model training).</td>
+            <td><a href="https://cloud.google.com/terms/data-processing-terms" target="_blank" style="color: var(--primary);">Google Cloud Privacy</a></td>
+          </tr>
+          <tr>
+            <td><strong>Google Firebase</strong></td>
+            <td>User authentication, cloud database, crash analytics.</td>
+            <td>User UID, encrypted email (if registered), crash stack traces.</td>
+            <td><a href="https://firebase.google.com/support/privacy" target="_blank" style="color: var(--primary);">Firebase Privacy Policy</a></td>
+          </tr>
+          <tr>
+            <td><strong>RevenueCat</strong></td>
+            <td>In-app purchase validation and subscription entitlement management.</td>
+            <td>Anonymous user token and platform purchase receipt tokens.</td>
+            <td><a href="https://www.revenuecat.com/privacy" target="_blank" style="color: var(--primary);">RevenueCat Privacy</a></td>
+          </tr>
+          <tr>
+            <td><strong>Google Play / Apple StoreKit</strong></td>
+            <td>Payment processing, credit card billing, sales tax collection.</td>
+            <td>Billing address, payment method, subscription lifecycle. (Processed directly on store platform).</td>
+            <td><a href="https://policies.google.com/privacy" target="_blank" style="color: var(--primary);">Google Play</a> / <a href="https://www.apple.com/legal/privacy/" target="_blank" style="color: var(--primary);">Apple Privacy</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 8 -->
+    <h2 id="sec-8">8. Children's Online Privacy Protection Act (COPPA Compliance)</h2>
+    <p>
+      AP Exam App is designed for high school students (grades 9–12), AP candidates, and adult lifelong learners. <strong>Our service is strictly not directed to children under the age of 13.</strong>
+    </p>
+    <ul>
+      <li>We do <strong>NOT</strong> knowingly solicit or collect personal information from individuals under the age of 13.</li>
+      <li>If we discover that a user account has been registered by a child under 13 without verifiable parental consent, we will immediately terminate the account and purge all associated personal data from our cloud servers.</li>
+      <li>Parents or legal guardians who suspect that a child under 13 has submitted personal data may contact our student privacy officer directly at <a href="mailto:helpyou.ai.support@gmail.com" style="color: var(--primary);">helpyou.ai.support@gmail.com</a> for immediate permanent data deletion.</li>
+    </ul>
+
+    <!-- Section 9 -->
+    <h2 id="sec-9">9. Student Educational Records (FERPA Alignment)</h2>
+    <p>
+      To the extent that educators, schools, or tutoring programs utilize AP Exam App for supplemental coursework assistance, we treat all student-generated study materials, quiz diagnostics, and mistake records as confidential educational data in alignment with the <strong>Family Educational Rights and Privacy Act (FERPA)</strong> principles. Student records are never commercialized, never sold to third parties, and never utilized for advertising purposes.
+    </p>
+
+    <!-- Section 10 -->
+    <h2 id="sec-10">10. United States State Privacy Rights (California CCPA/CPRA & Beyond)</h2>
+    <p>
+      Under the <strong>California Consumer Privacy Act as amended by the California Privacy Rights Act (CCPA/CPRA)</strong>, as well as comprehensive privacy laws in Virginia (VCDPA), Colorado (CPA), Connecticut (CTDPA), and Utah (UCPA), qualifying residents have specific statutory rights:
+    </p>
+    <ul>
+      <li><strong>Right to Know & Access:</strong> You may request a complete disclosure of the specific categories and pieces of personal information collected about you over the preceding 12 months.</li>
+      <li><strong>Right to Delete:</strong> You have the right to request permanent deletion of your account and personal study records.</li>
+      <li><strong>Right to Correct:</strong> You have the right to rectify inaccurate personal details within your profile.</li>
+      <li><strong>Right to Opt-Out of Sale or Sharing:</strong> We do <strong>NOT</strong> sell your personal data or share your information for cross-context behavioral advertising; therefore, no opt-out request is necessary.</li>
+      <li><strong>Right to Non-Discrimination:</strong> We will never deny services, alter pricing, or degrade features if you choose to exercise your privacy rights.</li>
+    </ul>
+
+    <!-- Section 11 -->
+    <h2 id="sec-11">11. In-App Purchases, Billing & Auto-Renewable Subscriptions</h2>
+    <p>
+      The Application offers optional auto-renewable subscriptions (e.g., <em>AP Exam Pro Monthly</em> and <em>AP Exam Pro Yearly</em>) unlocking unlimited AI question scans, mock exams, and advanced diagnostic features:
+    </p>
+    <ul>
+      <li><strong>Payment Processing:</strong> All payments, free trial authorizations, and renewals are handled directly by Google Play or Apple App Store. We do not store or have access to your credit card or financial accounts.</li>
+      <li><strong>Auto-Renewal:</strong> Subscriptions automatically renew at the end of each billing period unless cancelled at least 24 hours prior to the expiration of the current cycle.</li>
+      <li><strong>Cancellation Instructions:</strong> You may cancel your subscription at any time without fee or penalty:
+        <br />• <strong>Android:</strong> Google Play Store &gt; Profile Icon &gt; Payments &amp; Subscriptions &gt; Subscriptions &gt; AP Exam App &gt; Cancel Subscription.
+        <br />• <strong>iOS:</strong> iPhone Settings &gt; Apple ID &gt; Subscriptions &gt; AP Exam App &gt; Cancel Subscription.
+      </li>
+      <li><strong>Refunds:</strong> Refund determinations are governed exclusively by the platform policies of Apple App Store and Google Play Store.</li>
+    </ul>
+
+    <!-- Section 12 -->
+    <h2 id="sec-12">12. Data Security & Encryption Protocol</h2>
+    <p>
+      We maintain rigorous physical, electronic, and administrative safeguards to protect student data against unauthorized access, alteration, or disclosure:
+    </p>
+    <ul>
+      <li><strong>In-Transit Encryption:</strong> All communications between your device and our servers use <strong>Transport Layer Security (TLS 1.3 / HTTPS)</strong> with strong cipher suites.</li>
+      <li><strong>At-Rest Encryption:</strong> Cloud databases (Firestore) and authentication records are encrypted at rest using industry-standard <strong>AES-256 encryption</strong>.</li>
+      <li><strong>Granular Security Rules:</strong> Database read and write rules require cryptographic authentication tokens, ensuring students can strictly access only their own individual study records.</li>
+    </ul>
+
+    <!-- Section 13 -->
+    <h2 id="sec-13">13. Retention & Permanent Account Deletion</h2>
+    <p>
+      You maintain absolute ownership and control over your personal data. You can delete your account and all associated cloud data at any time:
+    </p>
+    <ul>
+      <li><strong>Immediate In-App Deletion:</strong> Go to <strong>Profile &gt; Settings &gt; "Delete Account"</strong>. Confirming deletion immediately and permanently erases your profile, authentication records, saved notes, coins, streaks, and quiz history from our cloud servers.</li>
+      <li><strong>Manual Privacy Request:</strong> Send an email from your registered email address to <a href="mailto:helpyou.ai.support@gmail.com" style="color: var(--primary);">helpyou.ai.support@gmail.com</a> with the subject line <em>"Data Deletion Request"</em>. We process and confirm all verified requests within 48 hours.</li>
+    </ul>
+
+    <!-- Section 14 -->
+    <h2 id="sec-14">14. Push & Local Study Notifications</h2>
+    <p>
+      With your permission, the Application may deliver local notifications to help you maintain your daily AP study streak, remind you of upcoming exam countdown milestones, or alert you to scheduled study sessions.
+    </p>
+    <ul>
+      <li>Study reminders are scheduled <strong>locally on your device</strong> using native operating system timers.</li>
+      <li>You can enable, disable, or customize notification permissions at any time via your device's native System Settings (Settings &gt; Apps &gt; AP Exam App &gt; Notifications).</li>
+    </ul>
+
+    <!-- Section 15 -->
+    <h2 id="sec-15">15. Policy Updates & Contact Desk</h2>
+    <p>
+      We may revise this Privacy Policy periodically to reflect enhancements in our AI capabilities, infrastructure updates, or regulatory statutory adjustments. When revisions occur, the updated date at the top of this policy will be modified. Continued use of the Application after updates constitutes your agreement to the revised terms.
+    </p>
+    <div class="callout-box" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.3); color: #cbd5e1;">
+      <strong style="color: #60a5fa; font-size: 14px; display: block; margin-bottom: 6px;">AP Exam App Student Privacy & Legal Desk</strong>
+      <span>Inquiries, COPPA verifications, and deletion requests may be directed to our designated privacy officer:</span><br />
+      <span style="display: block; margin-top: 6px;">📧 <strong>Email:</strong> <a href="mailto:helpyou.ai.support@gmail.com" style="color: #60a5fa;">helpyou.ai.support@gmail.com</a></span>
+      <span>🌐 <strong>Official Portal:</strong> <a href="https://ap-exam-five.vercel.app" style="color: #60a5fa;">https://ap-exam-five.vercel.app</a></span>
+    </div>
+
+    <div class="footer">
+      <p>© 2026 AP Exam App. All Rights Reserved. Dedicated to Student Academic Success.</p>
+      <p style="margin-top: 8px;">
+        <a href="./terms.html">Terms of Service</a> • <a href="./privacy.html">Privacy Policy</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
