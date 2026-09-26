@@ -254,6 +254,9 @@ export function cleanForPDF(str) {
   // Clean excessive spaces around operators
   out = out.replace(/\s{2,}/g, ' ');
 
+  // Normalize accented Latin characters (e.g. Champs-Élysées -> Champs-Elysees)
+  out = out.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
   // Final safety pass for jsPDF Helvetica standard ASCII (leaves 0x20 to 0x7E)
   out = out.replace(/[^\x00-\x7F]/g, ' ');
   return out.trim();

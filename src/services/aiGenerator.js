@@ -76,9 +76,14 @@ Provide the real, official examination blueprint and structure:
    - Does this exam have Numerical Value / Integer questions without options?
    - Does this exam have Case-Based / Data-Based integrated questions?
    - Does this exam have multi-part Free-Response (FRQ) questions with sub-rubrics?
-6. Graphic & Tabular Requirements:
-   - Does this topic/exam test empirical data or rates requiring explicit Data Tables?
-   - Does this topic/exam test circuits, thermodynamic cycles, piecewise curves, or optics requiring explicit diagram coordinates and component parameters?
+7. Scope & Test Calibration:
+   - Determine if "${topic}" is a Single Chapter / Specific Topic OR a Full-Syllabus Mock Exam.
+   - For a Single Chapter / Specific Topic (e.g. "The Necklace", "Thermodynamics", "Organic Chemistry"):
+     Calibrate as an official Chapter Mastery & Unit Assessment for ${exam} (${country}):
+     * Scale total marks to a realistic, focused unit test (typically 25 to 35 marks, 45-60 minutes).
+     * Provide a diverse, non-repetitive distribution: Objective/MCQ check, Short Conceptual questions, 1 Case-Based/Extract study, and 1-2 Long Analytical questions.
+   - For Full-Syllabus / Broad Mock Exams (e.g. "Full Syllabus", "All Units", "Final Mock Paper"):
+     Replicate the full official board examination with exact official total marks (e.g. CBSE 80 Marks / 3 Hours, CBSE Science 70 Marks, JEE Main 300 Marks, NEET 720 Marks, AP 100 Composite, SAT 800) and full section allotments.
 
 Output ONLY valid JSON matching this schema:
 {
