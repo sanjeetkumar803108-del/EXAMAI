@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { auth } from '../lib/firebase';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
 
 function GoogleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+    <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
       <path
         fill="#4285F4"
         d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
@@ -32,16 +34,7 @@ export default function AuthModal({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  
-  // Real Google Sign-In states
-  const [googleClientId, setGoogleClientId] = useState(() => {
-    return import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem('examai_google_client_id') || '';
-  });
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [clientIdInput, setClientIdInput] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showGuide, setShowGuide] = useState(false);
-  const [directGoogleEmail, setDirectGoogleEmail] = useState('');
 
   // Read stored accounts from localStorage
   const getStoredAccounts = () => {
@@ -63,6 +56,30 @@ export default function AuthModal({ onLoginSuccess }) {
       console.error('Failed to store account:', e);
     }
   };
+
+  // Check for pending redirect sign-in result from Google OAuth on mount
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          const resultUser = result.user;
+          const userData = {
+            id: resultUser.uid,
+            name: resultUser.displayName || resultUser.email?.split('@')[0] || 'Student',
+            email: resultUser.email,
+            avatar: resultUser.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${resultUser.email}`,
+            authProvider: 'google',
+            createdAt: new Date().toISOString(),
+          };
+          saveAccount(userData);
+          localStorage.setItem('examai_user', JSON.stringify(userData));
+          onLoginSuccess(userData);
+        }
+      })
+      .catch((err) => {
+        console.warn('[Google Auth Redirect Notice]:', err);
+      });
+  }, []);
 
   const handleAuthSubmit = (e) => {
     e.preventDefault();
@@ -88,13 +105,11 @@ export default function AuthModal({ onLoginSuccess }) {
     const accounts = getStoredAccounts();
 
     if (mode === 'signup') {
-      // Check if user already exists
       if (accounts[cleanEmail]) {
         setErrorMsg('An account with this email already exists. Click below to Sign In.');
         return;
       }
 
-      // Create new account
       const newUser = {
         id: 'usr_' + Date.now(),
         name: cleanEmail.split('@')[0],
@@ -111,7 +126,6 @@ export default function AuthModal({ onLoginSuccess }) {
         onLoginSuccess(newUser);
       }, 350);
     } else {
-      // Sign In mode
       const existing = accounts[cleanEmail];
       if (existing) {
         if (existing.password && existing.password !== password) {
@@ -121,8 +135,6 @@ export default function AuthModal({ onLoginSuccess }) {
         localStorage.setItem('examai_user', JSON.stringify(existing));
         onLoginSuccess(existing);
       } else {
-        // If not found in localStorage (e.g. testing in a fresh browser session),
-        // save and let them proceed seamlessly so they are never blocked!
         const newUser = {
           id: 'usr_' + Date.now(),
           name: cleanEmail.split('@')[0],
@@ -138,121 +150,63 @@ export default function AuthModal({ onLoginSuccess }) {
     }
   };
 
-  // Real Google Sign-In trigger using Google Identity Services (GIS)
-  const triggerRealGoogleSignIn = (targetClientId) => {
-    const cid = (targetClientId || googleClientId || '').trim();
-    if (!cid) {
-      setShowGoogleModal(true);
-      return;
-    }
-
-    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-      setErrorMsg('Google Identity Services SDK is loading in your browser. Please try again in 2 seconds.');
-      return;
-    }
-
-    setIsGoogleLoading(true);
+  // Authentic Firebase Google Sign-In with forced Google Account Picker
+  const handleGoogleSignIn = async () => {
     setErrorMsg('');
+    setSuccessMsg('');
+    setIsGoogleLoading(true);
 
     try {
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: cid,
-        scope: 'email profile openid',
-        callback: async (tokenResponse) => {
-          if (tokenResponse && tokenResponse.access_token) {
-            try {
-              // Real fetch to Google's official userinfo endpoint
-              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-              });
-              if (userInfoRes.ok) {
-                const googleProfile = await userInfoRes.json();
-                const realUser = {
-                  id: 'goog_' + (googleProfile.sub || Date.now()),
-                  name: googleProfile.name || googleProfile.given_name || 'Google User',
-                  email: googleProfile.email,
-                  avatar: googleProfile.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${googleProfile.email}`,
-                  authProvider: 'google',
-                  createdAt: new Date().toISOString(),
-                };
-                saveAccount(realUser);
-                localStorage.setItem('examai_user', JSON.stringify(realUser));
-                setShowGoogleModal(false);
-                setIsGoogleLoading(false);
-                onLoginSuccess(realUser);
-                return;
-              } else {
-                setErrorMsg('Google server returned an error while fetching your account details.');
-              }
-            } catch (err) {
-              console.error('Failed to fetch userinfo from Google:', err);
-              setErrorMsg('Failed to communicate with Google authentication server.');
-            } finally {
-              setIsGoogleLoading(false);
-            }
-          } else {
-            setIsGoogleLoading(false);
-          }
-        },
-        error_callback: (err) => {
-          console.error('Google OAuth Error:', err);
+      const freshProvider = new GoogleAuthProvider();
+      // Forces Google to always show the account chooser dialog with all logged-in accounts
+      freshProvider.setCustomParameters({ prompt: 'select_account' });
+
+      let resultUser = null;
+      try {
+        const result = await signInWithPopup(auth, freshProvider);
+        resultUser = result.user;
+      } catch (popupErr) {
+        console.warn('[Google Auth] Popup blocked or closed, falling back to redirect:', popupErr);
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+          await signInWithRedirect(auth, freshProvider);
+          return;
+        }
+        if (popupErr.code === 'auth/popup-closed-by-user') {
           setIsGoogleLoading(false);
-          if (err && err.message) {
-            setErrorMsg(`Google Sign-In: ${err.message}`);
-          }
-        },
-      });
+          return;
+        }
+        throw popupErr;
+      }
 
-      // Opens REAL Google Account Chooser popup from accounts.google.com!
-      client.requestAccessToken({ prompt: 'select_account' });
-    } catch (e) {
-      console.error('Failed to trigger Google OAuth:', e);
+      if (resultUser) {
+        const userData = {
+          id: resultUser.uid,
+          name: resultUser.displayName || resultUser.email?.split('@')[0] || 'Google User',
+          email: resultUser.email,
+          avatar: resultUser.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${resultUser.email}`,
+          authProvider: 'google',
+          createdAt: new Date().toISOString(),
+        };
+
+        saveAccount(userData);
+        localStorage.setItem('examai_user', JSON.stringify(userData));
+        setSuccessMsg(`Welcome, ${userData.name}!`);
+        setTimeout(() => {
+          onLoginSuccess(userData);
+        }, 300);
+      }
+    } catch (err) {
+      console.error('[Google Auth Error]:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        // User closed the popup, cancel gracefully
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setErrorMsg('Domain not authorized in Firebase Console. Please add current domain to Firebase Auth Authorized Domains.');
+      } else {
+        setErrorMsg(err.message || 'Google Sign-In failed. Please try again.');
+      }
+    } finally {
       setIsGoogleLoading(false);
-      setErrorMsg(`Could not launch Google Sign-In: ${e.message}`);
     }
-  };
-
-  const handleGoogleBtnClick = () => {
-    const cid = (googleClientId || '').trim();
-    if (!cid) {
-      setShowGoogleModal(true);
-    } else {
-      triggerRealGoogleSignIn(cid);
-    }
-  };
-
-  const handleSaveClientIdAndLaunch = (e) => {
-    e.preventDefault();
-    const clean = clientIdInput.trim();
-    if (!clean) {
-      setErrorMsg('Please paste a valid Google OAuth Client ID.');
-      return;
-    }
-    localStorage.setItem('examai_google_client_id', clean);
-    setGoogleClientId(clean);
-    triggerRealGoogleSignIn(clean);
-  };
-
-  // Direct real email login fallback
-  const handleDirectEmailLogin = (e) => {
-    e.preventDefault();
-    const clean = directGoogleEmail.trim().toLowerCase();
-    if (!clean || !clean.includes('@')) {
-      setErrorMsg('Please enter a valid Google/Gmail address.');
-      return;
-    }
-    const realUser = {
-      id: 'goog_' + Date.now(),
-      name: clean.split('@')[0],
-      email: clean,
-      authProvider: 'google',
-      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${clean}`,
-      createdAt: new Date().toISOString(),
-    };
-    saveAccount(realUser);
-    localStorage.setItem('examai_user', JSON.stringify(realUser));
-    setShowGoogleModal(false);
-    onLoginSuccess(realUser);
   };
 
   return (
@@ -357,26 +311,35 @@ export default function AuthModal({ onLoginSuccess }) {
             </button>
           </form>
 
-          {/* OR Divider */}
-          <div style={styles.divider}>
-            <span style={styles.dividerLine}></span>
-            <span style={styles.dividerText}>OR</span>
-            <span style={styles.dividerLine}></span>
+          {/* OR CONTINUE WITH Divider (AP-Exam Style) */}
+          <div style={styles.dividerWrap}>
+            <div style={styles.dividerLine} />
+            <span style={styles.dividerText}>OR CONTINUE WITH</span>
           </div>
 
-          {/* Sign In With Google */}
+          {/* Sign In With Google Button (AP-Exam Style) */}
           <button
             type="button"
-            onClick={handleGoogleBtnClick}
+            onClick={handleGoogleSignIn}
             disabled={isGoogleLoading}
             style={{
-              ...styles.googleButton,
-              opacity: isGoogleLoading ? 0.7 : 1,
+              ...styles.googleBtn,
+              opacity: isGoogleLoading ? 0.75 : 1,
               cursor: isGoogleLoading ? 'wait' : 'pointer',
             }}
+            title="Sign in with your real Google Account"
           >
-            <GoogleIcon />
-            <span>{isGoogleLoading ? 'Connecting to Google Accounts...' : 'Sign in with Google'}</span>
+            {isGoogleLoading ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Loader2 size={18} className="animate-spin" color="#334155" />
+                <span>CONNECTING GOOGLE...</span>
+              </div>
+            ) : (
+              <>
+                <GoogleIcon />
+                <span>GOOGLE SIGN-IN</span>
+              </>
+            )}
           </button>
 
           {/* Toggle between Sign Up and Sign In */}
@@ -393,7 +356,7 @@ export default function AuthModal({ onLoginSuccess }) {
               }}
               style={styles.toggleBtn}
             >
-              Click here
+              {mode === 'signup' ? 'Sign In' : 'Sign Up'}
             </button>
           </div>
         </div>
@@ -409,114 +372,6 @@ export default function AuthModal({ onLoginSuccess }) {
           </div>
         </div>
       </div>
-
-      {/* Real Google Account OAuth Setup Modal */}
-      {showGoogleModal && (
-        <div style={styles.googleModalBackdrop} className="animate-fade-in">
-          <div style={styles.googleModalCard}>
-            <div style={styles.googleModalTop}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <GoogleIcon />
-                <span style={{ fontWeight: '800', fontSize: '15px', color: '#0f172a' }}>
-                  Sign in with Google
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowGoogleModal(false)}
-                style={styles.closeBtn}
-              >
-                <X size={16} color="#64748b" />
-              </button>
-            </div>
-
-            <p style={styles.googleModalDesc}>
-              Connect with your real Google account on this device via official Google Identity Services.
-            </p>
-
-            {/* If Client ID already exists, direct launch button */}
-            {googleClientId ? (
-              <div style={{ marginBottom: '16px' }}>
-                <button
-                  type="button"
-                  onClick={() => triggerRealGoogleSignIn(googleClientId)}
-                  disabled={isGoogleLoading}
-                  style={styles.primaryGoogleLaunchBtn}
-                >
-                  <GoogleIcon />
-                  <span>Open Device Google Accounts Chooser</span>
-                </button>
-                <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '6px' }}>
-                  Connected with Client ID: {googleClientId.slice(0, 16)}...
-                </span>
-              </div>
-            ) : (
-              <form onSubmit={handleSaveClientIdAndLaunch} style={{ marginBottom: '16px' }}>
-                <div style={styles.clientIdHeaderRow}>
-                  <span style={styles.clientIdLabel}>Google OAuth Client ID:</span>
-                  <button
-                    type="button"
-                    style={styles.guideToggleBtn}
-                    onClick={() => setShowGuide(!showGuide)}
-                  >
-                    {showGuide ? 'Hide Guide' : 'How to get in 2 mins?'}
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  value={clientIdInput}
-                  onChange={(e) => setClientIdInput(e.target.value)}
-                  placeholder="e.g. 123456789-abcdef.apps.googleusercontent.com"
-                  style={styles.clientIdInput}
-                />
-                <button
-                  type="submit"
-                  disabled={!clientIdInput.trim() || isGoogleLoading}
-                  style={styles.primaryGoogleLaunchBtn}
-                >
-                  <GoogleIcon />
-                  <span>{isGoogleLoading ? 'Connecting...' : 'Save & Open Google Accounts'}</span>
-                </button>
-              </form>
-            )}
-
-            {/* Quick 3-Step Guide Accordion */}
-            {showGuide && (
-              <div style={styles.guideBox} className="animate-fade-in">
-                <span style={styles.guideTitle}>⚡ 2-Minute Google Cloud Setup:</span>
-                <ol style={styles.guideList}>
-                  <li>Open <strong>console.cloud.google.com</strong> & create a free project.</li>
-                  <li>Go to <strong>APIs & Services &gt; Credentials &gt; Create Credentials &gt; OAuth client ID</strong>.</li>
-                  <li>Select <strong>Web application</strong>, add <code>http://localhost:5173</code> to <em>Authorized JavaScript origins</em>, and paste the Client ID above!</li>
-                </ol>
-              </div>
-            )}
-
-            {/* Direct Personal Email Fallback Option */}
-            <div style={styles.directEmailSection}>
-              <span style={styles.directEmailHeading}>
-                Or sign in directly with your personal Google email:
-              </span>
-              <form onSubmit={handleDirectEmailLogin} style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="email"
-                  value={directGoogleEmail}
-                  onChange={(e) => setDirectGoogleEmail(e.target.value)}
-                  placeholder="your.real.email@gmail.com"
-                  style={styles.customGoogleInput}
-                />
-                <button
-                  type="submit"
-                  disabled={!directGoogleEmail.trim()}
-                  style={styles.customGoogleSubmit}
-                >
-                  Sign In
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -524,13 +379,13 @@ export default function AuthModal({ onLoginSuccess }) {
 const styles = {
   overlay: {
     minHeight: '100vh',
+    width: '100%',
+    backgroundColor: '#f8fafc',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f8fafc',
-    backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.05), transparent 60%)',
-    padding: '24px 16px',
-    fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+    padding: '32px 16px',
+    boxSizing: 'border-box',
   },
   container: {
     width: '100%',
@@ -543,19 +398,19 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: '24px',
     textAlign: 'center',
+    marginBottom: '24px',
   },
   logoBadge: {
-    width: '46px',
-    height: '46px',
-    borderRadius: '13px',
+    width: '44px',
+    height: '44px',
+    borderRadius: '12px',
     backgroundColor: '#0f172a',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.15)',
     marginBottom: '10px',
-    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.25)',
   },
   brandTitleRow: {
     display: 'flex',
@@ -564,75 +419,78 @@ const styles = {
     marginBottom: '4px',
   },
   brandTitle: {
-    fontSize: '26px',
+    fontSize: '22px',
     fontWeight: '800',
     color: '#0f172a',
-    letterSpacing: '-0.6px',
+    letterSpacing: '-0.5px',
+    margin: 0,
   },
   aiTag: {
-    fontSize: '11px',
+    fontSize: '10.5px',
     fontWeight: '700',
     color: '#2563eb',
     backgroundColor: '#eff6ff',
+    padding: '2px 7px',
+    borderRadius: '6px',
     border: '1px solid #dbeafe',
-    borderRadius: '999px',
-    padding: '2px 8px',
-    letterSpacing: '0.2px',
   },
   brandSubtitle: {
     fontSize: '12.5px',
     color: '#64748b',
+    margin: 0,
     fontWeight: '500',
-    maxWidth: '320px',
-    lineHeight: '1.4',
   },
   card: {
     width: '100%',
     backgroundColor: '#ffffff',
+    borderRadius: '20px',
     border: '1px solid #e2e8f0',
-    borderRadius: '18px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
     padding: '28px 24px',
-    boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03)',
+    boxSizing: 'border-box',
   },
   cardHeader: {
-    marginBottom: '20px',
     textAlign: 'center',
+    marginBottom: '20px',
   },
   cardTitle: {
     fontSize: '18px',
     fontWeight: '800',
     color: '#0f172a',
-    letterSpacing: '-0.3px',
-    marginBottom: '4px',
+    letterSpacing: '-0.4px',
+    margin: '0 0 4px 0',
   },
   cardDesc: {
-    fontSize: '12.5px',
+    fontSize: '12px',
     color: '#64748b',
-    lineHeight: '1.45',
+    lineHeight: '1.4',
+    margin: 0,
   },
   alertError: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '9px 12px',
+    padding: '10px 14px',
     backgroundColor: '#fef2f2',
     border: '1px solid #fecaca',
-    borderRadius: '8px',
-    color: '#991b1b',
+    borderRadius: '10px',
+    color: '#b91c1c',
     fontSize: '12px',
     marginBottom: '16px',
+    lineHeight: '1.4',
   },
   alertSuccess: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '9px 12px',
+    padding: '10px 14px',
     backgroundColor: '#f0fdf4',
     border: '1px solid #bbf7d0',
-    borderRadius: '8px',
-    color: '#166534',
+    borderRadius: '10px',
+    color: '#15803d',
     fontSize: '12px',
     marginBottom: '16px',
+    fontWeight: '500',
   },
   form: {
     display: 'flex',
@@ -642,7 +500,7 @@ const styles = {
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '5px',
+    gap: '6px',
   },
   inputLabel: {
     fontSize: '12px',
@@ -661,14 +519,15 @@ const styles = {
   },
   input: {
     width: '100%',
-    padding: '11px 12px 11px 36px',
-    borderRadius: '10px',
-    border: '1.5px solid #cbd5e1',
-    backgroundColor: '#ffffff',
+    padding: '10px 12px 10px 36px',
     fontSize: '13.5px',
     color: '#0f172a',
+    backgroundColor: '#ffffff',
+    border: '1.5px solid #cbd5e1',
+    borderRadius: '10px',
     outline: 'none',
-    transition: 'all 0.15s ease',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.15s ease',
   },
   eyeBtn: {
     position: 'absolute',
@@ -676,61 +535,68 @@ const styles = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
+    padding: '4px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '4px',
   },
   primaryButton: {
-    marginTop: '6px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '11.5px 16px',
+    width: '100%',
+    padding: '12px',
     backgroundColor: '#0f172a',
     color: '#ffffff',
-    borderRadius: '10px',
+    border: 'none',
+    borderRadius: '12px',
     fontSize: '13.5px',
     fontWeight: '700',
-    border: 'none',
     cursor: 'pointer',
+    marginTop: '4px',
     transition: 'background-color 0.15s ease',
-    boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)',
   },
-  divider: {
+  dividerWrap: {
+    position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    margin: '18px 0',
+    justifyContent: 'center',
+    margin: '22px 0 16px 0',
   },
   dividerLine: {
-    flex: 1,
+    position: 'absolute',
+    width: '100%',
     height: '1px',
     backgroundColor: '#e2e8f0',
   },
   dividerText: {
-    fontSize: '11px',
-    color: '#94a3b8',
+    position: 'relative',
+    backgroundColor: '#ffffff',
     padding: '0 12px',
-    fontWeight: '700',
+    fontSize: '10.5px',
+    fontWeight: '800',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
     letterSpacing: '0.8px',
   },
-  googleButton: {
+  googleBtn: {
     width: '100%',
+    backgroundColor: '#ffffff',
+    border: '1.5px solid #e2e8f0',
+    color: '#1e293b',
+    fontWeight: '700',
+    padding: '13px 20px',
+    borderRadius: '14px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '10px',
-    padding: '11px 16px',
-    backgroundColor: '#ffffff',
-    border: '1.5px solid #cbd5e1',
-    borderRadius: '10px',
-    color: '#1e293b',
-    fontSize: '13.5px',
-    fontWeight: '600',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
     cursor: 'pointer',
     transition: 'all 0.15s ease',
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
+    fontSize: '13px',
+    letterSpacing: '0.3px',
   },
   toggleFooter: {
     marginTop: '20px',
@@ -738,176 +604,33 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '6px',
-    fontSize: '13px',
+    fontSize: '12.5px',
   },
   toggleText: {
     color: '#64748b',
-    fontWeight: '500',
   },
   toggleBtn: {
-    backgroundColor: 'transparent',
+    background: 'none',
     border: 'none',
     color: '#2563eb',
     fontWeight: '700',
-    fontSize: '13px',
     cursor: 'pointer',
-    textDecoration: 'underline',
-    textUnderlineOffset: '3px',
-    padding: '2px 4px',
+    padding: 0,
+    fontSize: '12.5px',
   },
   trustSignals: {
-    marginTop: '22px',
+    marginTop: '20px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: '6px',
-    fontSize: '11.5px',
-    color: '#94a3b8',
+    textAlign: 'center',
   },
   trustItem: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-  },
-  googleModalBackdrop: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    backdropFilter: 'blur(3px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '16px',
-    zIndex: 9999,
-  },
-  googleModalCard: {
-    width: '100%',
-    maxWidth: '380px',
-    backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    padding: '20px',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-  },
-  googleModalTop: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '10px',
-  },
-  closeBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  googleModalDesc: {
-    fontSize: '12.5px',
-    color: '#475569',
-    marginBottom: '14px',
-    lineHeight: '1.4',
-  },
-  primaryGoogleLaunchBtn: {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    padding: '11px 16px',
-    backgroundColor: '#ffffff',
-    border: '1.5px solid #0f172a',
-    borderRadius: '10px',
-    color: '#0f172a',
-    fontSize: '13px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
-    transition: 'all 0.15s ease',
-  },
-  clientIdHeaderRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '6px',
-  },
-  clientIdLabel: {
-    fontSize: '12px',
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  guideToggleBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#2563eb',
     fontSize: '11px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    padding: 0,
-    textDecoration: 'underline',
-  },
-  clientIdInput: {
-    width: '100%',
-    padding: '9px 12px',
-    borderRadius: '8px',
-    border: '1px solid #cbd5e1',
-    fontSize: '12px',
-    color: '#0f172a',
-    marginBottom: '10px',
-    boxSizing: 'border-box',
-    fontFamily: 'monospace',
-  },
-  guideBox: {
-    backgroundColor: '#f8fafc',
-    border: '1px solid #e2e8f0',
-    borderRadius: '10px',
-    padding: '12px 14px',
-    marginBottom: '16px',
-  },
-  guideTitle: {
-    fontSize: '12px',
-    fontWeight: '700',
-    color: '#0f172a',
-    display: 'block',
-    marginBottom: '6px',
-  },
-  guideList: {
-    margin: 0,
-    paddingLeft: '18px',
-    fontSize: '11.5px',
-    color: '#475569',
-    lineHeight: '1.6',
-  },
-  directEmailSection: {
-    paddingTop: '14px',
-    borderTop: '1px solid #f1f5f9',
-  },
-  directEmailHeading: {
-    fontSize: '11.5px',
-    color: '#64748b',
-    display: 'block',
-    marginBottom: '8px',
-  },
-  customGoogleInput: {
-    flex: 1,
-    padding: '8px 10px',
-    borderRadius: '8px',
-    border: '1px solid #cbd5e1',
-    fontSize: '12px',
-    color: '#0f172a',
-  },
-  customGoogleSubmit: {
-    padding: '8px 14px',
-    borderRadius: '8px',
-    border: 'none',
-    backgroundColor: '#0f172a',
-    color: '#ffffff',
-    fontSize: '12px',
-    fontWeight: '600',
-    cursor: 'pointer',
+    color: '#94a3b8',
   },
 };
