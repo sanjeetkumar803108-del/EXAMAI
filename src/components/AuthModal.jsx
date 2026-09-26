@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 function GoogleIcon() {
   return (
@@ -158,32 +160,44 @@ export default function AuthModal({ onLoginSuccess }) {
 
     try {
       const freshProvider = new GoogleAuthProvider();
-      // Forces Google to always show the account chooser dialog with all logged-in accounts
-      freshProvider.setCustomParameters({ prompt: 'select_account' });
-
       let resultUser = null;
-      try {
-        const result = await signInWithPopup(auth, freshProvider);
-        resultUser = result.user;
-      } catch (popupErr) {
-        console.warn('[Google Auth] Popup blocked or closed, falling back to redirect:', popupErr);
-        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
-          await signInWithRedirect(auth, freshProvider);
-          return;
+
+      // 1. If running natively inside Android APK, use native Google Play Services (Zero redirect, no browser sessionStorage error)
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const nativeResult = await FirebaseAuthentication.signInWithGoogle();
+          resultUser = nativeResult.user;
+        } catch (nativeErr) {
+          console.warn('[Native Google Auth Error]:', nativeErr);
+          throw nativeErr;
         }
-        if (popupErr.code === 'auth/popup-closed-by-user') {
-          setIsGoogleLoading(false);
-          return;
+      } else {
+        // 2. Standard Web Browser Flow
+        const freshProvider = new GoogleAuthProvider();
+        freshProvider.setCustomParameters({ prompt: 'select_account' });
+        try {
+          const result = await signInWithPopup(auth, freshProvider);
+          resultUser = result.user;
+        } catch (popupErr) {
+          console.warn('[Google Auth] Popup blocked or closed, falling back to redirect:', popupErr);
+          if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+            await signInWithRedirect(auth, freshProvider);
+            return;
+          }
+          if (popupErr.code === 'auth/popup-closed-by-user') {
+            setIsGoogleLoading(false);
+            return;
+          }
+          throw popupErr;
         }
-        throw popupErr;
       }
 
       if (resultUser) {
         const userData = {
           id: resultUser.uid,
-          name: resultUser.displayName || resultUser.email?.split('@')[0] || 'Google User',
+          name: resultUser.displayName || resultUser.name || resultUser.email?.split('@')[0] || 'Google User',
           email: resultUser.email,
-          avatar: resultUser.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${resultUser.email}`,
+          avatar: resultUser.photoURL || resultUser.photoUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${resultUser.email}`,
           authProvider: 'google',
           createdAt: new Date().toISOString(),
         };
