@@ -9,10 +9,10 @@ export function getApiKey() {
 
 // High-availability models pool (Real v1beta Google Gemini API models)
 const ACTIVE_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
   'gemini-flash-latest',
   'gemini-flash-lite-latest',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
 ];
 
 // Anti-duplication question memory per topic
@@ -45,7 +45,7 @@ export function saveQuestionHistory(topic, newQuestions) {
 // Stage 1: Live Deep Web Research on Official Exam Blueprint, Sections & Marking Scheme
 export async function performLiveWebResearch(topic, profile, onProgress) {
   const exam = profile.targetExam || 'Standardized Examination';
-  const country = profile.country || 'Global';
+  const country = profile.countryName || profile.country || 'Global';
   const grade = profile.grade || 'Secondary';
   const stream = profile.stream || 'General';
 
@@ -229,7 +229,7 @@ export function sanitizeMathText(text) {
 async function callGeminiAPIWithModel(modelName, topic, profile, questionCount, difficulty, researchData, pastQuestions) {
   const exam = profile.targetExam || 'National Board Examination';
   const grade = profile.grade || 'Secondary Level';
-  const country = profile.country || 'Global';
+  const country = profile.countryName || profile.country || 'Global';
   const detectedSubject = researchData?.detectedSubject || (topic.toLowerCase().includes('thief') || topic.toLowerCase().includes('letter to god') ? 'English Language & Literature' : 'General Curriculum');
   const subjectCode = researchData?.subjectCode || '';
   const maxMarks = researchData?.officialMaxMarks || 100;
@@ -611,3 +611,157 @@ Return ONLY valid JSON:
     questions: questionEvaluations,
   };
 }
+
+function getCountryFlag(name) {
+  const map = {
+    germany: '🇩🇪',
+    deutschland: '🇩🇪',
+    france: '🇫🇷',
+    japan: '🇯🇵',
+    singapore: '🇸🇬',
+    brazil: '🇧🇷',
+    brasil: '🇧🇷',
+    italy: '🇮🇹',
+    italia: '🇮🇹',
+    spain: '🇪🇸',
+    espana: '🇪🇸',
+    china: '🇨🇳',
+    russia: '🇷🇺',
+    australia: '🇦🇺',
+    canada: '🇨🇦',
+    netherlands: '🇳🇱',
+    switzerland: '🇨🇭',
+    sweden: '🇸🇪',
+    norway: '🇳🇴',
+    finland: '🇫🇮',
+    new_zealand: '🇳🇿',
+    south_africa: '🇿🇦',
+    south_korea: '🇰🇷',
+    korea: '🇰🇷',
+    mexico: '🇲🇽',
+    saudi_arabia: '🇸🇦',
+    pakistan: '🇵🇰',
+    bangladesh: '🇧🇩',
+    nepal: '🇳🇵',
+    sri_lanka: '🇱🇰',
+    indonesia: '🇮🇩',
+    malaysia: '🇲🇾',
+    nigeria: '🇳🇬',
+    egypt: '🇪🇬',
+    argentina: '🇦🇷',
+    chile: '🇨🇱',
+    poland: '🇵🇱',
+    ireland: '🇮🇪',
+    turkey: '🇹🇷',
+  };
+  const key = name.toLowerCase().trim().replace(/\s+/g, '_');
+  return map[key] || '🌍';
+}
+
+function generateFallbackCountryCurriculum(countryName) {
+  const norm = countryName.trim();
+  const id = norm.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const flag = getCountryFlag(norm);
+  return {
+    id,
+    name: norm,
+    flag,
+    currency: '$',
+    grades: [
+      `Secondary / High School (Grades 9-10)`,
+      `Senior Secondary / College Prep (Grades 11-12)`,
+      `National Graduation Year (Grade 12)`,
+      `Pre-University / Foundation Level`,
+      `Higher Education Entrance Level`,
+    ],
+    streams: [
+      { id: 'stem', name: 'Science & STEM (Physics, Chemistry, Math)' },
+      { id: 'medical', name: 'Bio-Medical & Health Sciences (Biology, Chemistry)' },
+      { id: 'commerce', name: 'Commerce, Economics & Business Studies' },
+      { id: 'humanities', name: 'Humanities, Social Sciences & Arts' },
+      { id: 'technology', name: 'Computer Science, IT & Engineering' },
+    ],
+    targetExams: [
+      { id: `${id}_national`, name: `${norm} National Senior School Examination`, authority: `${norm} Ministry of Education` },
+      { id: `${id}_entrance`, name: `${norm} Central University Entrance Exam`, authority: `${norm} Higher Education Board` },
+      { id: `${id}_stem_cert`, name: `${norm} Advanced STEM & Science Certificate`, authority: `${norm} National Examination Council` },
+      { id: `${id}_olympiad`, name: `${norm} National Mathematics & Science Olympiad`, authority: `${norm} Olympiad Syndicate` },
+    ],
+  };
+}
+
+// Live Deep Research on Any Custom Country's Education System, Grades & Exams
+export async function fetchCountryEducationSystem(countryName) {
+  const apiKey = getApiKey();
+
+  const prompt = `You are a Global Education System & Examination Board Authority.
+Research and return the authentic, official educational framework for the country: "${countryName}".
+
+Return ONLY valid JSON matching this schema:
+{
+  "id": "${countryName.toLowerCase().replace(/[^a-z0-9]/g, '_')}",
+  "name": "${countryName}",
+  "flag": "Flag emoji of this country (e.g. 🇩🇪, 🇫🇷, 🇯🇵, 🇸🇬, 🇧🇷, 🇨🇦, 🇦🇺)",
+  "currency": "Currency symbol (e.g. €, ¥, $, S$, £)",
+  "grades": [
+    "Grade / Level 1 (e.g. Lower Secondary / Middle)",
+    "Grade / Level 2 (e.g. Secondary / High School)",
+    "Grade / Level 3 (e.g. Senior Secondary / Junior College)",
+    "Grade / Level 4 (e.g. Final Graduation Year / Pre-University)",
+    "University Entrance / Higher Education"
+  ],
+  "streams": [
+    { "id": "stem", "name": "Natural Sciences & STEM (Physics, Chemistry, Math)" },
+    { "id": "medical", "name": "Pre-Medical & Life Sciences (Biology, Chemistry)" },
+    { "id": "commerce", "name": "Business, Commerce & Economics" },
+    { "id": "humanities", "name": "Humanities, Arts & Social Sciences" },
+    { "id": "technical", "name": "Technical, Vocational & Applied Sciences" }
+  ],
+  "targetExams": [
+    {
+      "id": "exam_1",
+      "name": "Most Prominent National Exam (e.g. Abitur, Baccalauréat, O-Levels, A-Levels, Gaokao, Suneung, Matura, HSC, NCEA)",
+      "authority": "Official Ministry of Education or Examination Board name"
+    }
+  ]
+}
+Include between 4 and 8 real, authentic national and standardized board/entrance examinations for "${countryName}".`;
+
+  if (apiKey) {
+    for (const model of ACTIVE_MODELS) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const parsed = JSON.parse(cleanText);
+            if (parsed && Array.isArray(parsed.grades) && Array.isArray(parsed.targetExams)) {
+              if (!parsed.flag || parsed.flag.length > 4) {
+                parsed.flag = getCountryFlag(countryName);
+              }
+              return parsed;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`Model ${model} failed country lookup:`, err.message);
+      }
+    }
+  }
+
+  // Graceful fallback with realistic framework for the requested country
+  return generateFallbackCountryCurriculum(countryName);
+}
+
+

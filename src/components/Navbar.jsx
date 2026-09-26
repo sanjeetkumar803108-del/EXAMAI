@@ -10,7 +10,10 @@ export default function Navbar({
   testsRemaining = 28,
   totalTests = 30,
 }) {
-  const countryObj = COUNTRIES.find((c) => c.id === profile?.country) || COUNTRIES[0];
+  const countryObj = COUNTRIES.find((c) => c.id === profile?.country) || {
+    flag: profile?.countryFlag || '🌐',
+    name: profile?.countryName || profile?.country || 'Education Profile',
+  };
 
   return (
     <header style={styles.header}>
