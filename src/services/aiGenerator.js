@@ -1,12 +1,18 @@
-// ExamAI Intelligence Engine — Powered by Google Gemini
-const SYSTEM_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+export function getApiKey() {
+  return (
+    import.meta.env.VITE_GEMINI_API_KEY ||
+    import.meta.env.GEMINI_API_KEY ||
+    localStorage.getItem('examai_gemini_api_key') ||
+    ''
+  );
+}
 
-// High-availability models pool
+// High-availability models pool (Real v1beta Google Gemini API models)
 const ACTIVE_MODELS = [
-  'gemini-3.5-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-flash-latest',
   'gemini-flash-lite-latest',
-  'gemini-3.1-flash-lite',
-  'gemini-3.5-flash',
 ];
 
 // Anti-duplication question memory per topic
@@ -112,7 +118,8 @@ Output ONLY valid JSON matching this schema:
   let researchResult = null;
   for (const model of ACTIVE_MODELS) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${SYSTEM_API_KEY}`;
+      const apiKey = getApiKey();
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -175,7 +182,13 @@ Output ONLY valid JSON matching this schema:
 
 // Stage 2: Real Standardized Question Paper Generation Strictly Based on Discovered Blueprint
 export async function generateExamPaper({ topic, profile, questionCount = 20, difficulty = 'Standard', researchData = null }) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('Gemini API Key missing! Please set VITE_GEMINI_API_KEY in Vercel settings and redeploy.');
+  }
+
   const pastQuestions = getQuestionHistory(topic);
+  let lastError = null;
 
   // Try each model in pool until successful
   for (const model of ACTIVE_MODELS) {
@@ -188,11 +201,12 @@ export async function generateExamPaper({ topic, profile, questionCount = 20, di
         return paper;
       }
     } catch (err) {
+      lastError = err.message;
       console.warn(`Model ${model} failed, trying next model:`, err.message);
     }
   }
 
-  throw new Error('All Gemini models are temporarily busy. Please check internet and retry in a few seconds.');
+  throw new Error(`Generation failed across all models (${lastError || 'Please check your API key & quota'}).`);
 }
 
 // Helper to sanitize broken math strings and LaTeX slips
@@ -408,7 +422,8 @@ Format response ONLY as valid JSON matching this schema:
   "sections": ${JSON.stringify(dynamicSections, null, 2)}
 }`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${SYSTEM_API_KEY}`;
+  const apiKey = getApiKey();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -533,7 +548,8 @@ Return ONLY valid JSON:
 
   for (const model of ACTIVE_MODELS) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${SYSTEM_API_KEY}`;
+      const apiKey = getApiKey();
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

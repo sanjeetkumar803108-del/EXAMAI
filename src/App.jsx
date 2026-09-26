@@ -105,7 +105,7 @@ export default function App() {
       localStorage.setItem('examai_tests_remaining', newRemaining.toString());
     } catch (err) {
       console.error('Failed to generate paper:', err);
-      alert('Error generating exam paper. Please check console.');
+      alert(err.message || 'Error generating exam paper. Please check console.');
     } finally {
       setIsGenerating(false);
       setResearchStep('');
