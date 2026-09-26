@@ -839,4 +839,127 @@ Include between 4 and 8 real, authentic national/state standardized and board ex
   throw new Error(`Could not recognize "${query}" as a real country or state. Please enter a valid geographic jurisdiction (e.g. Germany, Japan, France, California, Bihar).`);
 }
 
+// Stage 3: Interactive Question Tutor & AI Doubt Solver
+export async function askAIQuestionTutor({
+  question,
+  paperContext = {},
+  profile = {},
+  mode = 'explain_question', // 'explain_question' or 'explain_answer'
+  userMessage = '',
+  chatHistory = [],
+}) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('Gemini API Key missing! Please configure API Key in settings.');
+  }
+
+  const exam = profile.targetExam || paperContext.targetExam || 'Standardized Exam';
+  const grade = profile.grade || 'Secondary';
+  const country = profile.countryName || profile.country || 'Global';
+  const topic = paperContext.topic || 'Curriculum Subject';
+
+  let systemInstruction = '';
+  if (mode === 'explain_question') {
+    systemInstruction = `You are a friendly, encouraging master teacher and doubt-solving tutor for ${exam} (${grade}, ${country}).
+The student is practicing Question Q.${question.questionNumber} on the topic "${topic}".
+
+TASK: EXPLAIN THE QUESTION IN 4 CLEAR STRUCTURED STEPS (WITHOUT GIVING AWAY THE FINAL ANSWER):
+Provide your response in structured markdown with bold headings:
+### Step 1: What is this Question Really Asking?
+(Explain the core problem statement in simple, friendly, intuitive terms so the student clearly understands the objective.)
+
+### Step 2: Breaking Down Given Information & Clues
+(Highlight the given numbers, variables, constants, and boundary conditions.)
+
+### Step 3: Core Concepts, Theories & Formulas Needed
+(State the scientific principles, laws, or formulas that apply to this problem, formatted with LaTeX/KaTeX like $F = ma$ or $W = Fd\\cos\\theta$.)
+
+### Step 4: Step-by-Step Strategic Solving Guide
+(Give the student a logical roadmap to solve it themselves without directly revealing the final answer. Encourage them to try calculating it!)`;
+  } else {
+    systemInstruction = `You are a Chief Board Examiner and master subject specialist for ${exam} (${grade}, ${country}).
+The student needs a complete masterclass solution for Question Q.${question.questionNumber} on "${topic}".
+
+TASK: EXPLAIN THE FULL OFFICIAL ANSWER STEP-BY-STEP:
+Provide your response in structured markdown with bold headings:
+### Step 1: Official Correct Answer
+(State the final answer clearly. If MCQ, specify the correct option letter and exact option text.)
+
+### Step 2: Complete Step-by-Step Derivation & Solution
+(Provide exhaustive working: show formula substitution, intermediate calculations, unit conversions, and justifications formatted with clean math.)
+
+### Step 3: Official Marking Scheme & Step Rubric
+(Show how marks are awarded step-by-step according to ${exam} board rubrics totaling ${question.marks} mark(s).)
+
+### Step 4: Examiner's Pro-Tips & Common Pitfalls
+(Highlight common calculation or conceptual traps students make on this question and how to avoid losing marks.)`;
+  }
+
+  let conversationParts = [];
+  conversationParts.push({
+    text: `STUDENT PROFILE:
+- Target Exam: ${exam}
+- Level / Grade: ${grade}
+- Country: ${country}
+- Topic: ${topic}
+
+QUESTION DETAILS:
+- Question Number: Q.${question.questionNumber}
+- Marks: ${question.marks} Mark(s)
+- Type: ${question.type}
+- Question Text:
+${question.text}
+${question.options && question.options.length > 0 ? `\nOptions:\n${question.options.join('\n')}` : ''}
+${question.correctAnswer ? `\nOfficial Answer Key Reference: ${question.correctAnswer}` : ''}
+${question.explanation ? `\nReference Explanation: ${question.explanation}` : ''}
+${question.stepMarkingScheme && question.stepMarkingScheme.length > 0 ? `\nStep Rubric: ${question.stepMarkingScheme.join('; ')}` : ''}
+
+INSTRUCTION:
+${systemInstruction}`,
+  });
+
+  // If there is prior chat history in this session
+  if (chatHistory && chatHistory.length > 0) {
+    chatHistory.forEach((msg) => {
+      conversationParts.push({
+        text: `${msg.role === 'user' ? 'Student' : 'AI Tutor'}: ${msg.content}`,
+      });
+    });
+  }
+
+  // If user sent a follow-up question
+  if (userMessage && userMessage.trim()) {
+    conversationParts.push({
+      text: `Student Follow-up Doubt: "${userMessage.trim()}"
+Please answer the student's follow-up doubt directly, warmly, and clearly based on the context of Q.${question.questionNumber}.`,
+    });
+  }
+
+  for (const model of ACTIVE_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: conversationParts }],
+          generationConfig: { temperature: 0.25 },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          return sanitizeMathText(text);
+        }
+      }
+    } catch (err) {
+      console.warn(`Model ${model} failed for AI tutor:`, err.message);
+    }
+  }
+
+  throw new Error('AI Tutor is temporarily busy. Please check your connection or try again in a few moments.');
+}
+
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Clock, CheckCircle, Eye, EyeOff, Sparkles, FileText, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
+import { Download, Clock, CheckCircle, Eye, EyeOff, Sparkles, FileText, ChevronDown, ChevronUp, BookOpen, Bot } from 'lucide-react';
 import { exportExamToPDF } from '../services/pdfExporter';
 import MathRenderer from './MathRenderer';
 import FormattedQuestionBody from './FormattedQuestionBody';
+import AskAIModal from './AskAIModal';
 
 export default function ExamPaperView({ paper, onEvaluate, onReset }) {
   const [studentAnswers, setStudentAnswers] = useState({});
@@ -10,6 +11,15 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
   const [showInstructions, setShowInstructions] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(paper.timeAllowed.includes('90') ? 90 * 60 : 180 * 60);
+
+  // Ask AI Doubt Assistant modal state
+  const [showAskAIModal, setShowAskAIModal] = useState(false);
+  const [askAIInitialQ, setAskAIInitialQ] = useState(1);
+
+  const handleOpenAskAI = (qNum = 1) => {
+    setAskAIInitialQ(qNum);
+    setShowAskAIModal(true);
+  };
 
   // Timer logic
   useEffect(() => {
@@ -207,97 +217,148 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
                 const studentAns = studentAnswers[q.id] || '';
 
                 return (
-                  <div key={q.id} style={styles.questionItem}>
-                    {/* Q Header */}
-                    <div style={styles.questionTop}>
-                      <span style={styles.qNumber}>Q.{q.questionNumber}</span>
-                      <span style={styles.qMarks}>[{q.marks} Mark{q.marks > 1 ? 's' : ''}]</span>
-                    </div>
+                  <React.Fragment key={q.id}>
+                    {/* Ask AI Banner above Question 1 */}
+                    {Number(q.questionNumber) === 1 && (
+                      <div style={styles.askAiBannerCard} className="animate-fade-in">
+                        <div style={styles.askAiBannerLeft}>
+                          <div style={styles.askAiBannerIconBadge}>
+                            <Bot size={22} color="#ffffff" />
+                          </div>
+                          <div style={styles.askAiBannerTextGroup}>
+                            <div style={styles.askAiBannerTitleRow}>
+                              <span style={styles.askAiBannerTitle}>Have a Doubt in this Paper? Ask AI Tutor</span>
+                              <span style={styles.askAiBadgePill}>Interactive Doubt Solver</span>
+                            </div>
+                            <p style={styles.askAiBannerDesc}>
+                              Click below to select any question number (1 to {totalQuestions}) and get an instant step-by-step conceptual breakdown or full detailed answer.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAskAI(1)}
+                          style={styles.askAiBannerBtn}
+                          id="ask-ai-banner-btn"
+                        >
+                          <Sparkles size={15} color="#2563eb" />
+                          <span>Ask AI</span>
+                        </button>
+                      </div>
+                    )}
 
-                    {/* Question Text & Structured Tables */}
-                    <FormattedQuestionBody text={q.text} />
+                    <div style={styles.questionItem}>
+                      {/* Q Header */}
+                      <div style={styles.questionTop}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={styles.qNumber}>Q.{q.questionNumber}</span>
+                          <span style={styles.qMarks}>[{q.marks} Mark{q.marks > 1 ? 's' : ''}]</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAskAI(q.questionNumber)}
+                          style={styles.qAskAiPill}
+                          title={`Ask AI about Question ${q.questionNumber}`}
+                        >
+                          <Bot size={12} />
+                          <span>Ask AI</span>
+                        </button>
+                      </div>
 
-                    {/* MCQ Options */}
-                    {q.type === 'mcq' && q.options && (
-                      <div style={styles.optionsGrid}>
-                        {q.options.map((opt, oIdx) => {
-                          const optChar = opt.charAt(0);
-                          const isSelected = studentAns === optChar;
-                          const optBody = opt.replace(/^[A-E][).:\s]\s*/, '');
+                      {/* Question Text & Structured Tables */}
+                      <FormattedQuestionBody text={q.text} />
 
-                          return (
-                            <button
-                              type="button"
-                              key={oIdx}
-                              onClick={() => handleMCQSelect(q.id, optChar)}
-                              style={{
-                                ...styles.optionButton,
-                                borderColor: isSelected ? '#0f172a' : '#e2e8f0',
-                                backgroundColor: isSelected ? '#f8fafc' : '#ffffff',
-                                fontWeight: isSelected ? '700' : '400',
-                              }}
-                            >
-                              <span
+                      {/* MCQ Options */}
+                      {q.type === 'mcq' && q.options && (
+                        <div style={styles.optionsGrid}>
+                          {q.options.map((opt, oIdx) => {
+                            const optChar = opt.charAt(0);
+                            const isSelected = studentAns === optChar;
+                            const optBody = opt.replace(/^[A-E][).:\s]\s*/, '');
+
+                            return (
+                              <button
+                                type="button"
+                                key={oIdx}
+                                onClick={() => handleMCQSelect(q.id, optChar)}
                                 style={{
-                                  ...styles.optLetterBadge,
-                                  backgroundColor: isSelected ? '#0f172a' : '#f1f5f9',
-                                  color: isSelected ? '#ffffff' : '#475569',
+                                  ...styles.optionButton,
+                                  borderColor: isSelected ? '#0f172a' : '#e2e8f0',
+                                  backgroundColor: isSelected ? '#f8fafc' : '#ffffff',
+                                  fontWeight: isSelected ? '700' : '400',
                                 }}
                               >
-                                {optChar}
-                              </span>
-                              <span style={styles.optContent}>
-                                <MathRenderer text={optBody} />
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Subjective / Numerical Answer Field */}
-                    {q.type !== 'mcq' && (
-                      <div style={styles.textAnswerWrapper}>
-                        <textarea
-                          rows={3}
-                          value={studentAns}
-                          onChange={(e) => handleTextAnswerChange(q.id, e.target.value)}
-                          placeholder="Type or paste your step-by-step solution here (or formula, calculations, derivation)..."
-                          style={styles.answerTextarea}
-                        />
-                      </div>
-                    )}
-
-                    {/* Official Solution & Step Marking (if toggled) */}
-                    {showSolutions && (
-                      <div style={styles.solutionBox} className="animate-fade-in">
-                        <div style={styles.solHeader}>
-                          <CheckCircle size={13} color="#10b981" />
-                          <span style={styles.solTitle}>Official Solution & Step Rubric</span>
+                                <span
+                                  style={{
+                                    ...styles.optLetterBadge,
+                                    backgroundColor: isSelected ? '#0f172a' : '#f1f5f9',
+                                    color: isSelected ? '#ffffff' : '#475569',
+                                  }}
+                                >
+                                  {optChar}
+                                </span>
+                                <span style={styles.optContent}>
+                                  <MathRenderer text={optBody} />
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
-                        <FormattedQuestionBody text={q.correctAnswer} customTextStyle={styles.solText} />
+                      )}
 
-                        {q.stepMarkingScheme && (
-                          <div style={styles.rubricSteps}>
-                            {q.stepMarkingScheme.map((step, stIdx) => (
-                              <div key={stIdx} style={styles.rubricItem}>
-                                <span style={styles.rubricDot}>•</span>
-                                <div style={{ flex: 1 }}>
-                                  <MathRenderer text={step} />
-                                </div>
-                              </div>
-                            ))}
+                      {/* Subjective / Numerical Answer Field */}
+                      {q.type !== 'mcq' && (
+                        <div style={styles.textAnswerWrapper}>
+                          <textarea
+                            rows={3}
+                            value={studentAns}
+                            onChange={(e) => handleTextAnswerChange(q.id, e.target.value)}
+                            placeholder="Type or paste your step-by-step solution here (or formula, calculations, derivation)..."
+                            style={styles.answerTextarea}
+                          />
+                        </div>
+                      )}
+
+                      {/* Official Solution & Step Marking (if toggled) */}
+                      {showSolutions && (
+                        <div style={styles.solutionBox} className="animate-fade-in">
+                          <div style={styles.solHeader}>
+                            <CheckCircle size={13} color="#10b981" />
+                            <span style={styles.solTitle}>Official Solution & Step Rubric</span>
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                          <FormattedQuestionBody text={q.correctAnswer} customTextStyle={styles.solText} />
+
+                          {q.stepMarkingScheme && (
+                            <div style={styles.rubricSteps}>
+                              {q.stepMarkingScheme.map((step, stIdx) => (
+                                <div key={stIdx} style={styles.rubricItem}>
+                                  <span style={styles.rubricDot}>•</span>
+                                  <div style={{ flex: 1 }}>
+                                    <MathRenderer text={step} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </React.Fragment>
                 );
               })}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Interactive Ask AI Doubt Assistant Modal */}
+      <AskAIModal
+        isOpen={showAskAIModal}
+        onClose={() => setShowAskAIModal(false)}
+        paper={paper}
+        profile={paper.studentProfile || {}}
+        initialQuestionNumber={askAIInitialQ}
+      />
     </div>
   );
 }
@@ -714,4 +775,100 @@ const styles = {
   rubricDot: {
     fontWeight: '700',
   },
+  askAiBannerCard: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '16px 20px',
+    backgroundColor: '#0f172a',
+    borderRadius: '14px',
+    marginBottom: '22px',
+    boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    flexWrap: 'wrap',
+    gap: '14px',
+  },
+  askAiBannerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    flex: 1,
+    minWidth: '260px',
+  },
+  askAiBannerIconBadge: {
+    width: '42px',
+    height: '42px',
+    borderRadius: '12px',
+    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.35)',
+  },
+  askAiBannerTextGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  askAiBannerTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap',
+  },
+  askAiBannerTitle: {
+    fontSize: '14.5px',
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: '-0.2px',
+  },
+  askAiBadgePill: {
+    fontSize: '10.5px',
+    fontWeight: '700',
+    padding: '2px 8px',
+    borderRadius: '999px',
+    backgroundColor: 'rgba(59, 130, 246, 0.25)',
+    color: '#93c5fd',
+    border: '1px solid rgba(147, 197, 253, 0.3)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.4px',
+  },
+  askAiBannerDesc: {
+    fontSize: '12px',
+    color: '#94a3b8',
+    lineHeight: '1.45',
+    margin: 0,
+  },
+  askAiBannerBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '7px',
+    padding: '10px 18px',
+    backgroundColor: '#ffffff',
+    color: '#0f172a',
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '700',
+    border: 'none',
+    cursor: 'pointer',
+    boxShadow: '0 4px 14px rgba(255, 255, 255, 0.2)',
+    transition: 'all 0.2s ease',
+    flexShrink: 0,
+  },
+  qAskAiPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '4px 10px',
+    backgroundColor: '#eff6ff',
+    border: '1px solid #bfdbfe',
+    borderRadius: '20px',
+    fontSize: '11px',
+    fontWeight: '700',
+    color: '#1d4ed8',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  },
 };
+
