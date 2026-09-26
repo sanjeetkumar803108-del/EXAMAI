@@ -1,3 +1,5 @@
+import { COUNTRIES } from '../data/examCatalog';
+
 export function getApiKey() {
   return (
     import.meta.env.VITE_GEMINI_API_KEY ||
@@ -44,14 +46,193 @@ export function saveQuestionHistory(topic, newQuestions) {
   }
 }
 
+// Dedicated Question Style & Typology directives enforcing authentic examination patterns
+export function getQuestionStyleDirective(styleId, countryCode = 'in') {
+  if (!styleId || styleId === 'mixed') {
+    return `STANDARD AUTHENTIC BLUEPRINT MIX:
+Follow the authentic distribution of question types customary for this national examination board (composite MCQs, conceptual short answer, analytical case/long questions).`;
+  }
+
+  // Japan Formats
+  if (styleId === 'jp_kumiawase') {
+    return `MANDATORY JAPANESE "KUMIAWASE" (COMBINATION MATRIX) FORMAT:
+Every multiple-choice problem MUST strictly emulate the authentic Japanese National Center Test / Kyōtsū Test / Daigaku Nyūshi combination matrix standard:
+1. Provide a detailed problem context followed by 3 or 4 proposition statements labeled [a], [b], [c] (or [I], [II], [III]).
+2. The examinee must determine which combination of statements is correct/valid.
+3. The options MUST be structured as an exhaustive combination matrix with 6 to 8 numbered options:
+   1) [a] only
+   2) [b] only
+   3) [c] only
+   4) [a] and [b]
+   5) [a] and [c]
+   6) [b] and [c]
+   7) [a], [b], and [c]
+   8) None of the statements
+Ensure genuine logical rigor where deducing the answer requires checking individual propositions.`;
+  }
+
+  if (styleId === 'jp_socratic') {
+    return `MANDATORY JAPANESE SOCRATIC DIALOGUE INTERPRETATION FORMAT:
+The question stem MUST present an authentic academic classroom dialogue between named students and instructor (e.g. Student Taro, Student Hanako, and Teacher Yamada) discussing a nuanced phenomenon, experimental observation, or problem.
+Each participant puts forward hypotheses, deductions, or criticisms.
+The question must ask the candidate to identify:
+- Which student's deduction contains a logical fallacy or incorrect premise, OR
+- Which conclusion logically follows from the consensus of the dialogue.
+Options must evaluate speaker arguments directly.`;
+  }
+
+  if (styleId === 'jp_algorithm') {
+    return `MANDATORY JAPANESE LOGIC & ALGORITHM TRACE FLOW FORMAT:
+Present a formal procedure, state transition diagram, or structured pseudo-code algorithm (with loops, conditions, and variables) modeling a physical, mathematical, or chemical process.
+The question asks candidates to trace variable states, loop iterations, or deduce the final return value for given initial conditions.`;
+  }
+
+  if (styleId === 'jp_document') {
+    return `MANDATORY JAPANESE PRIMARY DOCUMENT CONFRONTATION FORMAT:
+Present two contrasting or complementary source texts/excerpts (Source A and Source B).
+The question requires the candidate to critically contrast the premises, evaluate methodological discrepancies, or synthesize the underlying principle.`;
+  }
+
+  if (styleId === 'jp_mixed') {
+    return `MANDATORY DAIGAKU NYŪSHI COMPOSITE ENTRANCE EXAM MIX:
+Provide the full authentic Japanese national university entrance examination structure: Section 1 Kumiawase combination items, Section 2 Dialogue/source analysis, Section 3 Multi-stage mathematical/logical deduction.`;
+  }
+
+  // USA Formats
+  if (styleId === 'us_evidence') {
+    return `MANDATORY DIGITAL SAT TWO-PART EVIDENCE-PAIRED FORMAT:
+Structure questions as paired investigative items:
+- Part 1 tests a high-level deductive inference, claim evaluation, or scientific conclusion based on a premise.
+- Part 2 (or the immediate follow-up) asks: "Which choice provides the best evidence for the answer to the previous question?" with 4 verbatim quoted sentence excerpts or data points from the premise as options.`;
+  }
+
+  if (styleId === 'us_dbq') {
+    return `MANDATORY AP DOCUMENT-BASED QUESTION (DBQ) FORMAT:
+Provide 4-5 curated primary/secondary documentary sources or experimental data snippets (Document 1, Document 2, Document 3, etc.).
+The prompt requires the student to formulate a defensible thesis, analyze historical or scientific context, and evaluate sourcing (bias, purpose, audience) across the documents.`;
+  }
+
+  if (styleId === 'us_gridin') {
+    return `MANDATORY DIGITAL SAT / AP STUDENT-PRODUCED RESPONSE (GRID-IN):
+100% of the questions in this format MUST be non-MCQ numerical / calculation problems.
+DO NOT provide multiple choice options ('options': []).
+The student must compute the exact fraction, integer, or decimal answer. Include full step-by-step arithmetic/algebraic solution.`;
+  }
+
+  if (styleId === 'us_frq_experimental') {
+    return `MANDATORY AP EXPERIMENTAL DESIGN FREE-RESPONSE (FRQ) FORMAT:
+Present a laboratory investigation scenario.
+The question must have structured subparts:
+(a) State an appropriate hypothesis and identify independent/dependent variables.
+(b) Design the laboratory procedure, apparatus list, and measurements.
+(c) Predict the experimental curve / graph with labeled axes.
+(d) Error analysis: explain how a specific source of systematic or random error affects the calculated outcome.`;
+  }
+
+  // UK Formats
+  if (styleId === 'uk_synoptic') {
+    return `MANDATORY CAMBRIDGE / EDEXCEL A-LEVEL SYNOPTIC FORMAT:
+The question MUST be synoptic — synthesizing concepts with at least one other major domain of the curriculum.
+Students must demonstrate cross-modular mastery and deep thematic synthesis.`;
+  }
+
+  if (styleId === 'uk_anomaly') {
+    return `MANDATORY UK EXPERIMENTAL DATA RESPONSE & ANOMALY EVALUATION:
+Provide a realistic laboratory measurement table with an anomalous data point (outlier).
+The questions require:
+(a) Identifying the anomalous reading and justifying why it should be excluded from the mean.
+(b) Calculating percentage uncertainty and absolute error.
+(c) Evaluating experimental limitations and proposing specific apparatus refinements.`;
+  }
+
+  if (styleId === 'uk_lor') {
+    return `MANDATORY UK LEVEL OF RESPONSE (LoR) EXTENDED PROSE:
+Provide a 6-mark structured descriptive question marked on Level of Response criteria (Level 1, Level 2, Level 3).
+The question requires a coherent, logically sequenced scientific argument explaining the mechanism or phenomenon.`;
+  }
+
+  if (styleId === 'uk_practical') {
+    return `MANDATORY UK PRACTICAL ENDORSEMENT & CPAC UNCERTAINTY:
+Questions focus on apparatus resolution, percentage uncertainty calculation, propagation of errors, and calibration curves.`;
+  }
+
+  // France Formats
+  if (styleId === 'fr_dissertation') {
+    return `MANDATORY LE BACCALAURÉAT DISSERTATION PHILOSOPHIQUE FORMAT:
+The prompt must be formulated as a profound dialectical interrogation (e.g. "Dans quelle mesure... ?", "Peut-on affirmer que... ?").
+Provide explicit structural evaluation criteria following the French 3-part dialectic:
+- Thèse (affirmation and foundational arguments)
+- Antithèse (contradictions, limitations, and counter-arguments)
+- Synthèse (philosophical/scientific transcendence and resolution).`;
+  }
+
+  if (styleId === 'fr_commentaire') {
+    return `MANDATORY LE BACCALAURÉAT COMMENTAIRE DE TEXTE FORMAT:
+Provide an authoritative excerpt or scientific thesis.
+The task requires an exhaustive micro-analysis: analyzing lexical fields, logical connectors, underlying epistemological presuppositions, and authorial stance.`;
+  }
+
+  // Germany Formats
+  if (styleId === 'de_afb3') {
+    return `MANDATORY GERMAN ABITUR AFB-III OPERATOR FORMAT:
+Questions must be explicitly governed by KMK standardized Anforderungsbereich III operators:
+- "Beurteilen" (evaluate based on scientific/objective criteria)
+- "Stellung nehmen" (take a reasoned stand weighing ethical/societal implications)
+- "Überprüfen" (verify a thesis against experimental evidence).
+Include a clear expectation horizon (Erwartungshorizont) in the marking scheme.`;
+  }
+
+  if (styleId === 'de_quellenkritik') {
+    return `MANDATORY QUELLENKRITIK (SOURCE BIAS & CRITIQUE) FORMAT:
+Provide an excerpt or historical report.
+Tasks require:
+1. Identifying source type, author stance, and intended audience.
+2. Deconstructing underlying biases, omissions, and rhetorical strategies.`;
+  }
+
+  // India Formats
+  if (styleId === 'in_ar') {
+    return `MANDATORY 100% ASSERTION-REASON (A & R) FORMAT:
+Every single question in this paper MUST be an authentic Assertion-Reason question:
+Context and statements:
+Assertion (A): [Statement]
+Reason (R): [Explanation Statement]
+Options MUST be the standardized 4 options:
+A) Both (A) and (R) are true and (R) is the correct explanation of (A).
+B) Both (A) and (R) are true but (R) is NOT the correct explanation of (A).
+C) (A) is true but (R) is false.
+D) (A) is false but (R) is true.`;
+  }
+
+  if (styleId === 'in_case_study') {
+    return `MANDATORY CBSE / COMPETENCY CASE-BASED INTEGRATED FORMAT:
+Structure questions around detailed, contextual case vignettes (150-250 words) from real-world industrial, medical, or technological applications.
+Each case study is followed by 4 sub-questions: (i) MCQ/Objective 1M, (ii) Conceptual 1M, (iii) Analytical/Calculation 2M (with internal choice).`;
+  }
+
+  if (styleId === 'in_numerical') {
+    return `MANDATORY JEE MAIN / ADVANCED NUMERICAL VALUE FORMAT:
+Questions must be pure calculation problems without options ('options': []).
+The answer must be a precise integer or decimal value. Provide complete derivation and formula substitution in the step marking scheme.`;
+  }
+
+  if (styleId === 'in_pure_mcq') {
+    return `MANDATORY 100% PURE MULTIPLE CHOICE (MCQ) FORMAT:
+Every question MUST be a high-precision multiple choice question with exactly 4 options (A, B, C, D) testing conceptual clarity, formula application, and elimination techniques.`;
+  }
+
+  return `AUTHENTIC NATIONAL EXAM TYPOLOGY:
+Strictly emulate the question structure, operator taxonomy, and response format designated by the '${styleId}' benchmark for ${countryCode.toUpperCase()}.`;
+}
+
 // Stage 1: Live Deep Web Research on Official Exam Blueprint, Sections & Marking Scheme
-export async function performLiveWebResearch(topic, profile, onProgress) {
+export async function performLiveWebResearch(topic, profile, onProgress, questionStyle = 'mixed') {
   const exam = profile.targetExam || 'Standardized Examination';
   const country = profile.countryName || profile.country || 'Global';
   const grade = profile.grade || 'Secondary';
   const stream = profile.stream || 'General';
 
-  if (onProgress) onProgress(`Connecting to official curriculum registry for ${exam} (${country})...`);
+  if (onProgress) onProgress(`Connecting to official curriculum registry for ${exam} (${country}) [Style: ${questionStyle}]...`);
 
   const researchPrompt = `You are the Chief Examination Board Curriculum & Blueprint Specialist.
 Perform an exhaustive, deep curriculum & blueprint research for:
@@ -60,6 +241,7 @@ Perform an exhaustive, deep curriculum & blueprint research for:
 - Country / Jurisdiction: "${country}"
 - Stream / Focus: "${stream}"
 - Subject Topic / Chapter to test: "${topic}"
+- Requested Question Typology / Pattern: "${questionStyle}"
 
 Provide the real, official examination blueprint and structure:
 1. Exact Official Subject Name and Course / Subject Code (e.g., JEE Main Physics [JEE-PHY-01], NEET-UG Biology, CBSE Class 12 Chemistry [043], AP Calculus AB [AP-CALC-AB], Digital SAT Math, A-Levels Edexcel Mathematics, IB Diploma Physics HL, GCSE Science).
@@ -193,7 +375,15 @@ Output ONLY valid JSON matching this schema:
 }
 
 // Stage 2: Real Standardized Question Paper Generation Strictly Based on Discovered Blueprint
-export async function generateExamPaper({ topic, profile, questionCount = 20, difficulty = 'Standard', researchData = null }) {
+export async function generateExamPaper({
+  topic,
+  profile,
+  questionCount = 20,
+  difficulty = 'Standard',
+  researchData = null,
+  country = null,
+  questionStyle = 'mixed',
+}) {
   const apiKey = getApiKey();
   if (!apiKey) {
     throw new Error('Gemini API Key missing! Please set VITE_GEMINI_API_KEY in Vercel settings and redeploy.');
@@ -205,8 +395,18 @@ export async function generateExamPaper({ topic, profile, questionCount = 20, di
   // Try each model in pool until successful
   for (const model of ACTIVE_MODELS) {
     try {
-      console.log(`Generating exam paper with model: ${model}...`);
-      const paper = await callGeminiAPIWithModel(model, topic, profile, questionCount, difficulty, researchData, pastQuestions);
+      console.log(`Generating exam paper with model: ${model} [Format: ${questionStyle}, Country: ${country}]...`);
+      const paper = await callGeminiAPIWithModel(
+        model,
+        topic,
+        profile,
+        questionCount,
+        difficulty,
+        researchData,
+        pastQuestions,
+        country,
+        questionStyle
+      );
       if (paper && paper.sections && paper.sections.length >= 2) {
         const allNewQuestions = paper.sections.flatMap((s) => s.questions);
         saveQuestionHistory(topic, allNewQuestions);
@@ -233,10 +433,22 @@ export function sanitizeMathText(text) {
   return str.trim();
 }
 
-async function callGeminiAPIWithModel(modelName, topic, profile, questionCount, difficulty, researchData, pastQuestions) {
+async function callGeminiAPIWithModel(
+  modelName,
+  topic,
+  profile,
+  questionCount,
+  difficulty,
+  researchData,
+  pastQuestions,
+  countryParam = null,
+  questionStyle = 'mixed'
+) {
   const exam = profile.targetExam || 'National Board Examination';
   const grade = profile.grade || 'Secondary Level';
-  const country = profile.countryName || profile.country || 'Global';
+  const selectedCountryCode = countryParam || profile?.country || 'in';
+  const countryObj = COUNTRIES.find((c) => c.id === selectedCountryCode);
+  const country = countryObj ? countryObj.name : (profile.countryName || profile.country || 'Global');
   const detectedSubject = researchData?.detectedSubject || (topic.toLowerCase().includes('thief') || topic.toLowerCase().includes('letter to god') ? 'English Language & Literature' : 'General Curriculum');
   const subjectCode = researchData?.subjectCode || '';
   const maxMarks = researchData?.officialMaxMarks || 100;
@@ -245,6 +457,8 @@ async function callGeminiAPIWithModel(modelName, topic, profile, questionCount, 
   const calculatorPolicy = researchData?.calculatorPolicy || 'Follow standard examination calculator regulations.';
   const requiresTables = researchData?.requiresDataTables ?? false;
   const requiresGraphs = researchData?.requiresGraphDescriptions ?? false;
+
+  const styleDirective = getQuestionStyleDirective(questionStyle, selectedCountryCode);
 
   // Dynamic blueprint sections from live research
   let sectionsBlueprintDescription = '';
@@ -339,10 +553,15 @@ CRITICAL: DO NOT repeat any of the above questions, question stems, or options! 
       ];
 
   const prompt = `You are the Chief Examination Paper Setter for ${exam} (${country}, Grade: ${grade}).
-You are creating an authentic, 100% REAL standardized examination paper strictly conforming to the official ${boardName} blueprint.
+You are creating an authentic, 100% REAL standardized examination paper strictly conforming to the official ${boardName} blueprint and requested national question format.
+
+NATIONAL EXAM QUESTION TYPOLOGY MANDATE:
+Format Key: "${questionStyle}"
+${styleDirective}
 
 LIVE RESEARCH BLUEPRINT:
 - Exam: ${exam} (${grade})
+- Country / Jurisdiction: ${country} (${countryObj?.flag || ''})
 - Authority: ${boardName}
 - Subject: ${detectedSubject} ${subjectCode ? `[Subject Code: ${subjectCode}]` : ''}
 - Maximum Marks: ${maxMarks}

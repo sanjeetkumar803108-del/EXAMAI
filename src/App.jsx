@@ -81,7 +81,7 @@ function MainApp() {
   };
 
   // Trigger Sample Paper Generation with Live Web Grounding & Gemini
-  const handleGeneratePaper = async ({ topic, questionCount, difficulty }) => {
+  const handleGeneratePaper = async ({ topic, questionCount, difficulty, country, questionStyle }) => {
     if (!profile) {
       toast.info('Please configure your target exam and grade first.', 'Profile Required');
       setShowProfileModal(true);
@@ -98,18 +98,31 @@ function MainApp() {
       setIsGenerating(true);
       setActiveResearchTopic(topic);
 
-      // Step 1: Live Web Syllabus Grounding & Research
-      const researchData = await performLiveWebResearch(topic, profile, (stepText) => {
-        setResearchStep(stepText);
-      });
+      const effectiveCountry = country || profile?.country || 'in';
+      const effectiveProfile = {
+        ...profile,
+        country: effectiveCountry,
+      };
 
-      // Step 2: Gemini AI Question Paper Synthesis Grounded on Research
+      // Step 1: Live Web Syllabus Grounding & Research with Country & Question Style
+      const researchData = await performLiveWebResearch(
+        topic,
+        effectiveProfile,
+        (stepText) => {
+          setResearchStep(stepText);
+        },
+        questionStyle
+      );
+
+      // Step 2: Gemini AI Question Paper Synthesis Grounded on Research & Style
       const paper = await generateExamPaper({
         topic,
-        profile,
+        profile: effectiveProfile,
         questionCount,
         difficulty,
         researchData,
+        country: effectiveCountry,
+        questionStyle,
       });
 
       setCurrentPaper(paper);

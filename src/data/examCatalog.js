@@ -1,8 +1,11 @@
 // Global Examination & Curriculum Database
 export const COUNTRIES = [
   { id: 'in', name: 'India', flag: '🇮🇳', currency: '₹' },
+  { id: 'jp', name: 'Japan', flag: '🇯🇵', currency: '¥' },
   { id: 'us', name: 'United States', flag: '🇺🇸', currency: '$' },
   { id: 'uk', name: 'United Kingdom', flag: '🇬🇧', currency: '£' },
+  { id: 'fr', name: 'France', flag: '🇫🇷', currency: '€' },
+  { id: 'de', name: 'Germany', flag: '🇩🇪', currency: '€' },
   { id: 'ca', name: 'Canada', flag: '🇨🇦', currency: '$' },
   { id: 'au', name: 'Australia', flag: '🇦🇺', currency: '$' },
   { id: 'ae', name: 'UAE & Middle East', flag: '🇦🇪', currency: 'AED' },
@@ -11,8 +14,11 @@ export const COUNTRIES = [
 
 export const GRADES_BY_COUNTRY = {
   in: ['Class 9', 'Class 10 (Secondary)', 'Class 11', 'Class 12 (Sr. Secondary)', 'Repeater / Dropper', 'College / University'],
+  jp: ['Grade 9 (Junior High 3)', 'Grade 10 (High School 1)', 'Grade 11 (High School 2)', 'Grade 12 (High School 3 / Ronin)', 'University'],
   us: ['Grade 9 (Freshman)', 'Grade 10 (Sophomore)', 'Grade 11 (Junior)', 'Grade 12 (Senior)', 'Undergraduate'],
   uk: ['Year 9', 'Year 10-11 (GCSE)', 'Year 12 (AS-Level)', 'Year 13 (A-Level)', 'University'],
+  fr: ['Troisième (Grade 9)', 'Seconde (Grade 10)', 'Première (Grade 11)', 'Terminale (Grade 12 / Bac)', 'CPGE / Université'],
+  de: ['Klasse 9-10 (Sekundarstufe I)', 'Einführungsphase (Klasse 11)', 'Qualifikationsphase Q1/Q2 (Klasse 12-13 / Abitur)', 'Universität'],
   ca: ['Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 'College / University'],
   au: ['Year 9-10', 'Year 11 (Preliminary)', 'Year 12 (HSC / VCE / QCE)', 'University'],
   ae: ['Grade 9-10 (CBSE/British)', 'Grade 11-12 (CBSE/British)', 'University Prep'],
@@ -45,6 +51,11 @@ export const TARGET_EXAMS_BY_COUNTRY = {
     { id: 'upsc_pre', name: 'UPSC Civil Services (Prelims)', authority: 'Union Public Service Commission' },
     { id: 'state_board', name: 'State Board Higher Secondary (HSC/Inter)', authority: 'State Education Boards' },
   ],
+  jp: [
+    { id: 'jp_kyotsu', name: 'Common Test for University Admissions (Kyōtsū Test)', authority: 'National Center for University Entrance Examinations' },
+    { id: 'jp_daigaku', name: 'National University Entrance Exams (Tokyo/Kyoto Daigaku)', authority: 'Imperial University Admissions Board' },
+    { id: 'jp_koukou', name: 'Senior High School Entrance (Koukou Nyūshi)', authority: 'Prefectural Boards of Education' },
+  ],
   us: [
     { id: 'sat_digital', name: 'Digital SAT (Math & Reading)', authority: 'College Board' },
     { id: 'act', name: 'ACT (Composite)', authority: 'ACT Inc.' },
@@ -67,6 +78,15 @@ export const TARGET_EXAMS_BY_COUNTRY = {
     { id: 'ucat', name: 'UCAT (University Clinical Aptitude Test)', authority: 'UCAT Consortium' },
     { id: 'step_mat', name: 'STEP / MAT (Oxford & Cambridge Mathematics)', authority: 'Cambridge Assessment Admissions Testing' },
     { id: 'scottish_highers', name: 'Scottish Highers / Advanced Highers', authority: 'Scottish Qualifications Authority (SQA)' },
+  ],
+  fr: [
+    { id: 'fr_bac_general', name: 'Le Baccalauréat Général (Philo & Spécialités)', authority: 'Ministère de l\'Éducation Nationale' },
+    { id: 'fr_grand_oral', name: 'Le Grand Oral & Dissertation', authority: 'Académie de Paris' },
+    { id: 'fr_prepa', name: 'Classes Préparatoires (CPGE Concours)', authority: 'Grandes Écoles' },
+  ],
+  de: [
+    { id: 'de_abitur', name: 'Abitur (Gymnasiale Oberstufe)', authority: 'Kultusministerkonferenz (KMK)' },
+    { id: 'de_realschule', name: 'Mittlerer Schulabschluss (MSA / Realschule)', authority: 'Landesregierungen' },
   ],
   ca: [
     { id: 'ontario_gr12', name: 'Ontario Grade 12 (OSSD U-level STEM)', authority: 'Ministry of Education Ontario' },
@@ -95,6 +115,75 @@ export const TARGET_EXAMS_BY_COUNTRY = {
     { id: 'ib_dp_sl', name: 'IB Diploma Programme (Standard Level)', authority: 'International Baccalaureate Organization' },
     { id: 'cambridge_cie', name: 'Cambridge Assessment International (CIE)', authority: 'Cambridge University Press' },
     { id: 'sat_intl', name: 'Digital SAT International', authority: 'College Board' },
+  ],
+};
+
+// Authentic National Exam Question Typologies Map
+export const COUNTRY_QUESTION_STYLES = {
+  in: [
+    { id: 'mixed', label: 'Official CBSE Board Mix', badge: 'Standard Blueprint', desc: 'Standard section distribution: MCQs, Short Answer, Long Answer & Case Studies' },
+    { id: 'in_ar', label: 'Assertion-Reason (A & R)', badge: 'Analytical Reasoning', desc: 'Statements of Assertion & Reason testing underlying conceptual causation' },
+    { id: 'in_case_study', label: 'Case-Based Integrated Studies', badge: 'Competency-Based', desc: 'Real-world data/passage scenario with multi-part questions (Section E)' },
+    { id: 'in_numerical', label: 'Numerical / Integer Value (JEE)', badge: 'Calculation Focus', desc: 'Non-MCQ numerical calculations with exact decimal/integer outputs' },
+    { id: 'in_pure_mcq', label: '100% Pure Objective MCQs', badge: 'Speed & Elimination', desc: 'Pure multiple-choice format with 4 options and single correct answer' },
+  ],
+  jp: [
+    { id: 'jp_kumiawase', label: 'Combination Matrix (Kumiawase)', badge: 'Tokyo Daigaku Benchmark', desc: '3-4 logical statements with 8-option deduction matrix' },
+    { id: 'jp_socratic', label: 'Socratic Dialogue Interpretation', badge: 'Debate Analysis', desc: 'Multi-student debate transcript to identify logical fallacies and premises' },
+    { id: 'jp_algorithm', label: 'Algorithm & Logic Trace Flow', badge: 'Computational Logic', desc: 'Pseudo-code trace and state transition deduction problems' },
+    { id: 'jp_document', label: 'Primary Document Confrontation', badge: 'Source Critique', desc: 'Contradictory historical/scientific records comparison' },
+    { id: 'jp_mixed', label: 'Daigaku University Entrance Mix', badge: 'Composite Exam', desc: 'Standard authentic Japanese entrance exam structure' },
+  ],
+  us: [
+    { id: 'us_evidence', label: 'Two-Part Evidence-Paired (SAT)', badge: 'Digital SAT Standard', desc: 'Part 1: Deductive inference, Part 2: Exact quote/textual proof' },
+    { id: 'us_dbq', label: 'Document-Based Question (DBQ)', badge: 'AP CollegeBoard', desc: 'Synthesizing 6-7 historical/scientific sources into a thesis essay' },
+    { id: 'us_gridin', label: 'Student-Produced Response (Grid-In)', badge: 'Zero Guessing', desc: 'Calculation-only problems requiring direct fraction or decimal entry' },
+    { id: 'us_frq_experimental', label: 'Experimental Design FRQs (AP)', badge: 'Lab Science', desc: 'Laboratory apparatus setup, error analysis, and expected graphs' },
+    { id: 'us_mixed', label: 'Standard AP / SAT Composite Mix', badge: 'Standard Benchmark', desc: 'Standard multiple-choice and free-response synthesis' },
+  ],
+  uk: [
+    { id: 'uk_synoptic', label: 'Synoptic Multi-Module Questions', badge: 'A-Levels Synthesis', desc: 'Cross-module synthesis connecting 3-4 separate chapters into one problem' },
+    { id: 'uk_anomaly', label: 'Data Response & Outlier Evaluation', badge: 'Cambridge Standard', desc: 'Evaluating flawed experimental datasets and anomalous graph points' },
+    { id: 'uk_lor', label: 'Level of Response (LoR) Extended Prose', badge: 'Scientific Rigor', desc: 'Cohesive chain-of-reasoning structured essays evaluated on logical flow' },
+    { id: 'uk_practical', label: 'Practical Endorsement & Uncertainty', badge: 'CPAC Lab Skills', desc: 'Percentage uncertainty, apparatus selection, and error mitigation' },
+    { id: 'uk_mixed', label: 'Standard Cambridge / Edexcel Mix', badge: 'Standard Board', desc: 'Balanced structured exam format across all official modules' },
+  ],
+  fr: [
+    { id: 'fr_dissertation', label: 'Dissertation Philosophique', badge: 'Le Baccalauréat', desc: 'Dialectical 3-stage essay: Thèse, Antithèse, and Synthèse' },
+    { id: 'fr_commentaire', label: 'Commentaire de Texte', badge: 'Literary Exegesis', desc: 'Microscopic dissective analysis of author syntax, tone, and metaphor' },
+    { id: 'fr_grand_oral', label: 'Grand Oral Defense Scenarios', badge: 'Oral Inquiry', desc: 'Interdisciplinary research questions designed for live defense' },
+    { id: 'fr_mixed', label: 'Standard Baccalauréat Structure', badge: 'National Exam', desc: 'Standard French national graduation examination model' },
+  ],
+  de: [
+    { id: 'de_afb3', label: 'AFB-III Operator Tasks (Evaluation)', badge: 'Abitur Oberstufe', desc: 'Action-verb standardized tasks: Beurteilen, Stellung nehmen & Ethics' },
+    { id: 'de_quellenkritik', label: 'Quellenkritik (Source Bias Analysis)', badge: 'Critical History', desc: 'Author agenda, suppressed facts, and historical context critique' },
+    { id: 'de_material', label: 'Materialgestütztes Arbeiten', badge: 'Dossier Analysis', desc: 'Solving real-world challenges using a structured data dossier' },
+    { id: 'de_mixed', label: 'Standard Gymnasiale Oberstufe Mix', badge: 'Standard Tier', desc: 'Balanced AFB I, AFB II, and AFB III tiered distribution' },
+  ],
+  ca: [
+    { id: 'ca_diploma', label: 'Diploma Multiple-Choice & Numerical', badge: 'Provincial Benchmark', desc: 'Standard machine-scored and numerical-response items aligned with provincial curricula' },
+    { id: 'ca_written', label: 'Written-Response & Justification', badge: 'In-Depth STEM', desc: 'Structured multi-part problem solving requiring complete mathematical justifications' },
+    { id: 'ca_inquiry', label: 'Inquiry-Based Lab Investigation', badge: 'Scientific Inquiry', desc: 'Hypothesis testing, controlled variables evaluation, and data conclusion synthesis' },
+    { id: 'ca_mixed', label: 'Canadian Provincial Standard Mix', badge: 'Composite Standard', desc: 'Balanced diploma exam format across multiple-choice and written response' },
+  ],
+  au: [
+    { id: 'au_band6', label: 'HSC Band 6 Extended Response', badge: 'NESA Benchmark', desc: 'High-order analytical synthesis questions evaluated against criteria-based standards' },
+    { id: 'au_vce_data', label: 'VCE Data Analysis & Scenario Critique', badge: 'VCAA STEM', desc: 'Quantitative dataset interpretation with anomaly identification and experimental critique' },
+    { id: 'au_qce', label: 'QCE Problem-Solving & Modeling Task', badge: 'QCAA Standard', desc: 'Mathematical modeling and real-world scenario evaluation with full working' },
+    { id: 'au_mixed', label: 'Australian Senior Secondary Mix (HSC/VCE)', badge: 'National Standard', desc: 'Balanced combination of objective questions and extended free responses' },
+  ],
+  ae: [
+    { id: 'ae_emsat', label: 'EmSAT Achieve Computer-Adaptive Format', badge: 'UAE MoE Standard', desc: 'Standardized adaptive questions across progressive cognitive proficiency tiers' },
+    { id: 'ae_qudurat', label: 'Qudurat & Tahseeli Standardized Aptitude', badge: 'ETEC Standard', desc: 'Speed-based critical logic, spatial reasoning, and quantitative relationships' },
+    { id: 'ae_cambridge_intl', label: 'Cambridge International Assessment', badge: 'CIE Benchmark', desc: 'Structured papers conforming to Gulf CIE / IGCSE examination standards' },
+    { id: 'ae_mixed', label: 'UAE & Gulf Standard Exam Composite', badge: 'Regional Standard', desc: 'Balanced curriculum evaluation model covering theory and application' },
+  ],
+  global: [
+    { id: 'mixed', label: 'Comprehensive Exam Paper (Standard)', badge: 'Universal Standard', desc: 'Balanced distribution of MCQs, Short Answer, and Extended Response' },
+    { id: 'mcq_only', label: '100% Pure Multiple Choice (MCQs)', badge: 'Pure Objective', desc: 'Exclusively single-choice objective questions with four options' },
+    { id: 'subjective_only', label: '100% Pure Subjective / Theory', badge: 'Detailed Written', desc: 'Exclusively descriptive and structured derivation questions' },
+    { id: 'numerical', label: 'Numerical & Problem Solving', badge: 'Quantitative', desc: 'Formula-based calculation problems with step-by-step working' },
+    { id: 'case_study', label: 'Case Study & Scenario Analysis', badge: 'Real World', desc: 'Detailed scenario narrative followed by multi-step analytical questions' },
   ],
 };
 
