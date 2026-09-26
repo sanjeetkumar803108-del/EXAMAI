@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">ExamAI</string>
-    <string name="title_activity_main">ExamAI</string>
-    <string name="package_name">com.examai.prep</string>
-    <string name="custom_url_scheme">com.examai.prep</string>
-    <string name="default_web_client_id">702005695603-6klm5rcidns30dqcl75701ura7klk4j3.apps.googleusercontent.com</string>
-</resources>
