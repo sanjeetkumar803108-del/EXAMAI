@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.apexam.prep',
-  appName: 'AP Exam',
+  appId: 'com.examai.prep',
+  appName: 'ExamAI',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
