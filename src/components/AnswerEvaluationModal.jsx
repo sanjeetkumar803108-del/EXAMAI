@@ -5,6 +5,8 @@ import FormattedQuestionBody from './FormattedQuestionBody';
 
 export default function AnswerEvaluationModal({ evaluation, onClose }) {
   if (!evaluation) return null;
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+  const styles = getStyles(isMobile);
 
   return (
     <div style={styles.backdrop}>
@@ -140,7 +142,7 @@ export default function AnswerEvaluationModal({ evaluation, onClose }) {
   );
 }
 
-const styles = {
+const getStyles = (isMobile) => ({
   backdrop: {
     position: 'fixed',
     top: 0,
@@ -153,22 +155,24 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
-    padding: '20px',
+    padding: isMobile ? '8px' : '20px',
+    boxSizing: 'border-box',
   },
   modal: {
     width: '100%',
     maxWidth: '780px',
     backgroundColor: '#ffffff',
-    borderRadius: '18px',
+    borderRadius: isMobile ? '14px' : '18px',
     border: '1px solid #e2e8f0',
-    padding: '30px',
+    padding: isMobile ? '16px 12px' : '30px',
     boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.15)',
-    maxHeight: '90vh',
+    maxHeight: isMobile ? '95vh' : '90vh',
     display: 'flex',
     flexDirection: 'column',
+    boxSizing: 'border-box',
   },
   header: {
-    marginBottom: '20px',
+    marginBottom: isMobile ? '12px' : '20px',
   },
   badge: {
     display: 'inline-flex',
@@ -184,25 +188,26 @@ const styles = {
     marginBottom: '8px',
   },
   title: {
-    fontSize: '22px',
+    fontSize: isMobile ? '18px' : '22px',
     fontWeight: '800',
     color: '#0f172a',
     letterSpacing: '-0.4px',
     marginBottom: '4px',
   },
   subtitle: {
-    fontSize: '12.5px',
+    fontSize: isMobile ? '11.5px' : '12.5px',
     color: '#64748b',
   },
   scoreHero: {
     display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-    padding: '18px 24px',
+    flexDirection: isMobile ? 'column' : 'row',
+    alignItems: isMobile ? 'flex-start' : 'center',
+    gap: isMobile ? '10px' : '20px',
+    padding: isMobile ? '12px 14px' : '18px 24px',
     backgroundColor: '#fafafa',
     border: '1px solid #e2e8f0',
     borderRadius: '14px',
-    marginBottom: '22px',
+    marginBottom: isMobile ? '14px' : '22px',
   },
   scoreCircle: {
     display: 'flex',
@@ -267,14 +272,17 @@ const styles = {
   },
   qBar: {
     display: 'flex',
-    alignItems: 'center',
+    flexDirection: isMobile ? 'column' : 'row',
+    alignItems: isMobile ? 'flex-start' : 'center',
     justifyContent: 'space-between',
+    gap: isMobile ? '6px' : '0',
     marginBottom: '10px',
   },
   qBarLeft: {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
+    flexWrap: 'wrap',
   },
   qNum: {
     fontSize: '13px',
@@ -333,7 +341,7 @@ const styles = {
   },
   comparisonGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))',
     gap: '8px',
     marginTop: '6px',
   },
@@ -360,17 +368,19 @@ const styles = {
     paddingTop: '14px',
     borderTop: '1px solid #f1f5f9',
     display: 'flex',
-    justifyContent: 'flex-start',
+    justifyContent: isMobile ? 'stretch' : 'flex-start',
   },
   closeBtn: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '6px',
-    padding: '8px 16px',
+    width: isMobile ? '100%' : 'auto',
+    padding: isMobile ? '12px 16px' : '8px 16px',
     backgroundColor: '#0f172a',
     color: '#ffffff',
     borderRadius: '8px',
     fontSize: '13px',
     fontWeight: '600',
   },
-};
+});

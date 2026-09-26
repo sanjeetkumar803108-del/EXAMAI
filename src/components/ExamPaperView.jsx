@@ -15,6 +15,13 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
   // Ask AI Doubt Assistant modal state
   const [showAskAIModal, setShowAskAIModal] = useState(false);
   const [askAIInitialQ, setAskAIInitialQ] = useState(1);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleOpenAskAI = (qNum = 1) => {
     setAskAIInitialQ(qNum);
@@ -55,8 +62,7 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
     }));
   };
 
-  const answeredCount = Object.keys(studentAnswers).filter((k) => studentAnswers[k]?.trim().length > 0).length;
-  const totalQuestions = paper.sections.reduce((acc, s) => acc + s.questions.length, 0);
+  const styles = getStyles(isMobile);
 
   return (
     <div style={styles.container} className="animate-fade-in">
@@ -68,12 +74,12 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
             onClick={onReset}
             style={styles.backBtn}
           >
-            ← Generate New
+            ← {isMobile ? 'Back' : 'Generate New'}
           </button>
           <div style={styles.answeredBadge}>
-            <span>{answeredCount}/{totalQuestions} Answered</span>
+            <span>{answeredCount}/{totalQuestions} {isMobile ? '' : 'Answered'}</span>
           </div>
-          {timerActive && (
+          {timerActive && !isMobile && (
             <div style={styles.timerBadge}>
               <Clock size={13} color="#2563eb" />
               <span>{formatTimer(secondsLeft)}</span>
@@ -82,28 +88,15 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
         </div>
 
         <div style={styles.toolbarRight}>
-          {/* Timer Toggle */}
-          <button
-            type="button"
-            onClick={() => setTimerActive(!timerActive)}
-            style={{
-              ...styles.toolBtn,
-              backgroundColor: timerActive ? '#eff6ff' : '#ffffff',
-              color: timerActive ? '#1e40af' : '#475569',
-            }}
-          >
-            <Clock size={14} />
-            <span>{timerActive ? 'Pause Timer' : 'Start Exam Timer'}</span>
-          </button>
-
           {/* Toggle Solutions */}
           <button
             type="button"
             onClick={() => setShowSolutions(!showSolutions)}
             style={styles.toolBtn}
+            title={showSolutions ? 'Hide Rubrics' : 'View Rubrics'}
           >
             {showSolutions ? <EyeOff size={14} /> : <Eye size={14} />}
-            <span>{showSolutions ? 'Hide Rubrics' : 'View Rubrics'}</span>
+            <span>{showSolutions ? (isMobile ? 'Hide' : 'Hide Rubrics') : (isMobile ? 'Rubrics' : 'View Rubrics')}</span>
           </button>
 
           {/* Download PDF */}
@@ -113,18 +106,36 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
             style={styles.downloadBtn}
           >
             <Download size={14} />
-            <span>Download PDF</span>
+            <span>PDF</span>
           </button>
 
-          {/* Live AI Evaluation */}
-          <button
-            type="button"
-            onClick={() => onEvaluate(studentAnswers)}
-            style={styles.evaluateBtn}
-          >
-            <Sparkles size={14} />
-            <span>Submit for Live AI Checking</span>
-          </button>
+          {!isMobile && (
+            <>
+              {/* Timer Toggle */}
+              <button
+                type="button"
+                onClick={() => setTimerActive(!timerActive)}
+                style={{
+                  ...styles.toolBtn,
+                  backgroundColor: timerActive ? '#eff6ff' : '#ffffff',
+                  color: timerActive ? '#1e40af' : '#475569',
+                }}
+              >
+                <Clock size={14} />
+                <span>{timerActive ? 'Pause Timer' : 'Start Exam Timer'}</span>
+              </button>
+
+              {/* Live AI Evaluation */}
+              <button
+                type="button"
+                onClick={() => onEvaluate(studentAnswers)}
+                style={styles.evaluateBtn}
+              >
+                <Sparkles size={14} />
+                <span>Submit for Live AI Checking</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -328,52 +339,74 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
         profile={paper.studentProfile || {}}
         initialQuestionNumber={askAIInitialQ}
       />
+
+      {/* Mobile Sticky Bottom Bar */}
+      {isMobile && (
+        <div style={styles.mobileBottomBar}>
+          <button
+            type="button"
+            onClick={() => setTimerActive(!timerActive)}
+            style={styles.mobileTimerBtn}
+          >
+            <Clock size={16} color={timerActive ? '#2563eb' : '#64748b'} />
+            <span>{timerActive ? formatTimer(secondsLeft) : 'Timer'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onEvaluate(studentAnswers)}
+            style={styles.mobileSubmitBtn}
+          >
+            <Sparkles size={16} />
+            <span>Submit for Live AI Checking</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-const styles = {
+const getStyles = (isMobile) => ({
   container: {
     width: '100%',
     maxWidth: '920px',
     margin: '0 auto',
-    padding: '20px 20px 80px 20px',
+    padding: isMobile ? '8px 8px 100px 8px' : '20px 20px 80px 20px',
+    boxSizing: 'border-box',
   },
   toolbar: {
     position: 'sticky',
-    top: '60px',
+    top: isMobile ? '50px' : '60px',
     zIndex: 40,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     backdropFilter: 'blur(8px)',
     borderBottom: '1px solid #f1f5f9',
-    padding: '10px 0',
+    padding: isMobile ? '6px 2px' : '10px 0',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: '20px',
-    flexWrap: 'wrap',
-    gap: '10px',
+    marginBottom: isMobile ? '12px' : '20px',
+    gap: '8px',
   },
   toolbarLeft: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: isMobile ? '6px' : '10px',
   },
   backBtn: {
-    padding: '6px 12px',
+    padding: isMobile ? '5px 10px' : '6px 12px',
     backgroundColor: '#ffffff',
     border: '1px solid #e2e8f0',
     borderRadius: '8px',
-    fontSize: '12.5px',
+    fontSize: isMobile ? '12px' : '12.5px',
     fontWeight: '600',
     color: '#475569',
   },
   answeredBadge: {
-    padding: '5px 10px',
+    padding: isMobile ? '4px 8px' : '5px 10px',
     backgroundColor: '#f8fafc',
     border: '1px solid #e2e8f0',
     borderRadius: '20px',
-    fontSize: '12px',
+    fontSize: isMobile ? '11px' : '12px',
     fontWeight: '600',
     color: '#0f172a',
   },
@@ -392,30 +425,29 @@ const styles = {
   toolbarRight: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap',
+    gap: isMobile ? '6px' : '8px',
   },
   toolBtn: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    padding: '7px 12px',
+    gap: isMobile ? '4px' : '6px',
+    padding: isMobile ? '5px 10px' : '7px 12px',
     backgroundColor: '#ffffff',
     border: '1px solid #e2e8f0',
     borderRadius: '8px',
-    fontSize: '12.5px',
+    fontSize: isMobile ? '11.5px' : '12.5px',
     fontWeight: '600',
     color: '#475569',
   },
   downloadBtn: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    padding: '7px 14px',
+    gap: '4px',
+    padding: isMobile ? '5px 10px' : '7px 14px',
     backgroundColor: '#ffffff',
     border: '1.5px solid #0f172a',
     borderRadius: '8px',
-    fontSize: '12.5px',
+    fontSize: isMobile ? '11.5px' : '12.5px',
     fontWeight: '700',
     color: '#0f172a',
   },
@@ -432,22 +464,24 @@ const styles = {
   },
   paperCard: {
     backgroundColor: '#ffffff',
-    border: '1.5px solid #e2e8f0',
-    borderRadius: '16px',
-    padding: '36px 32px',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
+    border: isMobile ? '1px solid #e2e8f0' : '1.5px solid #e2e8f0',
+    borderRadius: isMobile ? '12px' : '16px',
+    padding: isMobile ? '14px 10px' : '36px 32px',
+    boxShadow: isMobile ? '0 2px 8px rgba(0, 0, 0, 0.04)' : '0 4px 20px rgba(0, 0, 0, 0.03)',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
   },
   researchPillBar: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '7px 12px',
+    padding: isMobile ? '6px 10px' : '7px 12px',
     backgroundColor: '#eff6ff',
     border: '1px solid #bfdbfe',
     borderRadius: '8px',
-    fontSize: '11.5px',
+    fontSize: isMobile ? '10.5px' : '11.5px',
     color: '#1e40af',
-    marginBottom: '18px',
+    marginBottom: isMobile ? '12px' : '18px',
   },
   paperMetaBar: {
     display: 'flex',
@@ -659,7 +693,7 @@ const styles = {
   },
   optionsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
     gap: '8px',
     marginTop: '8px',
   },
@@ -667,11 +701,11 @@ const styles = {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '10px',
-    padding: '8px 12px',
+    padding: isMobile ? '10px 12px' : '8px 12px',
     borderRadius: '8px',
     border: '1px solid #e2e8f0',
     textAlign: 'left',
-    fontSize: '13px',
+    fontSize: isMobile ? '13.5px' : '13px',
     color: '#334155',
     lineHeight: '1.4',
   },
@@ -701,6 +735,7 @@ const styles = {
     fontSize: '13px',
     color: '#0f172a',
     resize: 'vertical',
+    boxSizing: 'border-box',
   },
   solutionBox: {
     marginTop: '12px',
@@ -758,5 +793,50 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.15s ease',
   },
-};
+  mobileBottomBar: {
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: '10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) 14px',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    borderTop: '1px solid #e2e8f0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    zIndex: 50,
+    boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.08)',
+    boxSizing: 'border-box',
+  },
+  mobileTimerBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '12px 14px',
+    backgroundColor: '#f8fafc',
+    border: '1px solid #cbd5e1',
+    borderRadius: '12px',
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#475569',
+    flexShrink: 0,
+  },
+  mobileSubmitBtn: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '12px 16px',
+    backgroundColor: '#0f172a',
+    color: '#ffffff',
+    borderRadius: '12px',
+    fontSize: '13.5px',
+    fontWeight: '700',
+    border: 'none',
+    boxShadow: '0 2px 8px rgba(15, 23, 42, 0.25)',
+  },
+});
 

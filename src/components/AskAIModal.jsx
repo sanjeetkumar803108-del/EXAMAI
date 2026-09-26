@@ -244,6 +244,9 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
     }
   };
 
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+  const styles = getStyles(isMobile);
+
   return createPortal(
     <div
       style={styles.backdrop}
@@ -619,7 +622,7 @@ export default function AskAIModal({ isOpen, onClose, paper, profile, initialQue
   );
 }
 
-const styles = {
+const getStyles = (isMobile) => ({
   backdrop: {
     position: 'fixed',
     top: 0,
@@ -635,23 +638,24 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 999999,
-    padding: '16px',
+    padding: isMobile ? '8px' : '16px',
     boxSizing: 'border-box',
   },
   modalCard: {
     width: '100%',
     maxWidth: '820px',
-    maxHeight: '90vh',
+    maxHeight: isMobile ? '96vh' : '90vh',
     backgroundColor: '#ffffff',
-    borderRadius: '20px',
+    borderRadius: isMobile ? '16px' : '20px',
     boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.35)',
     border: '1px solid #e2e8f0',
     overflowY: 'auto',
-    padding: '24px',
+    padding: isMobile ? '16px 12px' : '24px',
     display: 'flex',
     flexDirection: 'column',
     position: 'relative',
     zIndex: 1000000,
+    boxSizing: 'border-box',
   },
   header: {
     display: 'flex',
@@ -760,7 +764,7 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     flex: 1,
-    minWidth: '240px',
+    minWidth: isMobile ? '100%' : '240px',
   },
   chipsLabel: {
     fontSize: '12px',
@@ -839,7 +843,7 @@ const styles = {
   },
   optionsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))',
     gap: '14px',
   },
   optionCard: {
@@ -1132,4 +1136,4 @@ const styles = {
     fontWeight: '700',
     cursor: 'pointer',
   },
-};
+});

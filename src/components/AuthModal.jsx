@@ -37,6 +37,15 @@ export default function AuthModal({ onLoginSuccess }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 640 : false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const styles = getStyles(isMobile);
 
   // Read stored accounts from localStorage
   const getStoredAccounts = () => {
@@ -390,7 +399,7 @@ export default function AuthModal({ onLoginSuccess }) {
   );
 }
 
-const styles = {
+const getStyles = (isMobile) => ({
   overlay: {
     minHeight: '100vh',
     width: '100%',
@@ -398,7 +407,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '32px 16px',
+    padding: isMobile
+      ? 'calc(16px + env(safe-area-inset-top, 0px)) 12px calc(24px + env(safe-area-inset-bottom, 0px)) 12px'
+      : '32px 16px',
     boxSizing: 'border-box',
   },
   container: {
@@ -413,7 +424,7 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     textAlign: 'center',
-    marginBottom: '24px',
+    marginBottom: isMobile ? '18px' : '24px',
   },
   logoBadge: {
     width: '44px',
@@ -433,7 +444,7 @@ const styles = {
     marginBottom: '4px',
   },
   brandTitle: {
-    fontSize: '22px',
+    fontSize: isMobile ? '20px' : '22px',
     fontWeight: '800',
     color: '#0f172a',
     letterSpacing: '-0.5px',
@@ -457,10 +468,10 @@ const styles = {
   card: {
     width: '100%',
     backgroundColor: '#ffffff',
-    borderRadius: '20px',
+    borderRadius: isMobile ? '16px' : '20px',
     border: '1px solid #e2e8f0',
     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-    padding: '28px 24px',
+    padding: isMobile ? '22px 16px' : '28px 24px',
     boxSizing: 'border-box',
   },
   cardHeader: {
@@ -647,4 +658,4 @@ const styles = {
     fontSize: '11px',
     color: '#94a3b8',
   },
-};
+});

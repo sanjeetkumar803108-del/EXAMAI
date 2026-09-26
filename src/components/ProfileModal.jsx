@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { COUNTRIES, GRADES_BY_COUNTRY, STREAMS, TARGET_EXAMS_BY_COUNTRY } from '../data/examCatalog';
 import { fetchCountryEducationSystem } from '../services/aiGenerator';
 import {
@@ -186,6 +186,15 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
                     TARGET_EXAMS_BY_COUNTRY[country] ||
                     TARGET_EXAMS_BY_COUNTRY.in ||
                     [];
+
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const styles = getStyles(isMobile);
 
   return (
     <div style={styles.backdrop}>
@@ -504,7 +513,7 @@ export default function ProfileModal({ initialProfile, onSave, isMandatory = fal
   );
 }
 
-const styles = {
+const getStyles = (isMobile) => ({
   backdrop: {
     position: 'fixed',
     top: 0,
@@ -517,18 +526,20 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
-    padding: '16px',
+    padding: isMobile ? '8px' : '16px',
+    boxSizing: 'border-box',
   },
   modal: {
     width: '100%',
     maxWidth: '580px',
     backgroundColor: '#ffffff',
-    borderRadius: '20px',
+    borderRadius: isMobile ? '16px' : '20px',
     border: '1px solid #e2e8f0',
-    padding: '28px 28px',
+    padding: isMobile ? '18px 14px' : '28px 28px',
     boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.18)',
-    maxHeight: '92vh',
+    maxHeight: isMobile ? '95vh' : '92vh',
     overflowY: 'auto',
+    boxSizing: 'border-box',
   },
   header: {
     marginBottom: '20px',
@@ -633,12 +644,13 @@ const styles = {
   },
   row: {
     display: 'flex',
-    gap: '14px',
+    flexDirection: isMobile ? 'column' : 'row',
+    gap: isMobile ? '12px' : '14px',
   },
   countryGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-    gap: '8px',
+    gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(95px, 1fr))' : 'repeat(auto-fill, minmax(120px, 1fr))',
+    gap: isMobile ? '6px' : '8px',
   },
   countryCardWrapper: {
     display: 'flex',
@@ -828,15 +840,15 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '13px',
+    padding: isMobile ? '14px 16px' : '13px',
     backgroundColor: '#0f172a',
     color: '#ffffff',
     borderRadius: '10px',
-    fontSize: '14px',
+    fontSize: isMobile ? '14.5px' : '14px',
     fontWeight: '700',
     cursor: 'pointer',
     border: 'none',
     boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)',
     transition: 'background-color 0.15s ease',
   },
-};
+});

@@ -7,6 +7,13 @@ export default function PaperGenerator({ profile, onGenerate, isGenerating }) {
   const [questionCount, setQuestionCount] = useState(20);
   const [difficulty, setDifficulty] = useState('Standard');
   const [showOptions, setShowOptions] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Cascading Country & Question Typology selection state
   const [selectedCountry, setSelectedCountry] = useState(profile?.country || 'in');
@@ -56,6 +63,8 @@ export default function PaperGenerator({ profile, onGenerate, isGenerating }) {
     setTopic(suggested);
   };
 
+  const styles = getStyles(isMobile);
+
   return (
     <div style={styles.container}>
       {/* Clean Minimalist Hero */}
@@ -75,7 +84,7 @@ export default function PaperGenerator({ profile, onGenerate, isGenerating }) {
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="Enter any chapter or topic (e.g. Thermodynamics, Calculus, Organic Aldehydes)..."
+            placeholder={isMobile ? "Enter topic (e.g. Thermodynamics, Calculus)..." : "Enter any chapter or topic (e.g. Thermodynamics, Calculus, Organic Aldehydes)..."}
             style={styles.mainInput}
             autoFocus
           />
@@ -90,18 +99,34 @@ export default function PaperGenerator({ profile, onGenerate, isGenerating }) {
           >
             <SlidersHorizontal size={15} color="#475569" />
           </button>
+          {!isMobile && (
+            <button
+              type="submit"
+              disabled={!topic.trim() || isGenerating}
+              style={{
+                ...styles.generateBtn,
+                opacity: !topic.trim() || isGenerating ? 0.6 : 1,
+              }}
+            >
+              <Sparkles size={16} />
+              <span>{isGenerating ? 'Synthesizing...' : 'Generate Paper'}</span>
+            </button>
+          )}
+        </div>
+
+        {isMobile && (
           <button
             type="submit"
             disabled={!topic.trim() || isGenerating}
             style={{
-              ...styles.generateBtn,
+              ...styles.generateBtnMobile,
               opacity: !topic.trim() || isGenerating ? 0.6 : 1,
             }}
           >
             <Sparkles size={16} />
-            <span>{isGenerating ? 'Synthesizing...' : 'Generate Paper'}</span>
+            <span>{isGenerating ? 'Synthesizing Official Paper...' : 'Generate Official Paper'}</span>
           </button>
-        </div>
+        )}
 
         {/* Collapsible Options Drawer */}
         {showOptions && (
@@ -305,27 +330,29 @@ export default function PaperGenerator({ profile, onGenerate, isGenerating }) {
   );
 }
 
-const styles = {
+const getStyles = (isMobile) => ({
   container: {
     width: '100%',
     maxWidth: '860px',
     margin: '0 auto',
-    padding: '36px 20px 24px 20px',
+    padding: isMobile ? '16px 12px 36px 12px' : '36px 20px 24px 20px',
+    boxSizing: 'border-box',
   },
   heroBox: {
     textAlign: 'center',
-    marginBottom: '28px',
+    marginBottom: isMobile ? '18px' : '28px',
   },
   heroTitle: {
-    fontSize: '28px',
+    fontSize: isMobile ? '22px' : '28px',
     fontWeight: '800',
     color: '#0f172a',
-    letterSpacing: '-0.7px',
+    letterSpacing: '-0.6px',
     marginBottom: '6px',
   },
   heroSub: {
-    fontSize: '14px',
+    fontSize: isMobile ? '13px' : '14px',
     color: '#64748b',
+    lineHeight: 1.4,
   },
   formBox: {
     width: '100%',
@@ -379,10 +406,28 @@ const styles = {
     cursor: 'pointer',
     transition: 'background-color 0.15s ease',
   },
+  generateBtnMobile: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '13px 18px',
+    backgroundColor: '#0f172a',
+    color: '#ffffff',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '700',
+    marginTop: '10px',
+    border: 'none',
+    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.15)',
+    cursor: 'pointer',
+  },
   optionsDrawer: {
     display: 'flex',
-    gap: '24px',
-    padding: '16px',
+    flexDirection: isMobile ? 'column' : 'row',
+    gap: isMobile ? '14px' : '24px',
+    padding: isMobile ? '14px' : '16px',
     marginTop: '12px',
     backgroundColor: '#f8fafc',
     borderRadius: '12px',
@@ -443,8 +488,8 @@ const styles = {
   },
   // Typology Cascading Selector Section
   typologySection: {
-    marginTop: '28px',
-    padding: '20px',
+    marginTop: isMobile ? '18px' : '28px',
+    padding: isMobile ? '14px 12px' : '20px',
     backgroundColor: '#ffffff',
     border: '1px solid #e2e8f0',
     borderRadius: '16px',
@@ -552,7 +597,7 @@ const styles = {
   },
   stylesGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
     gap: '10px',
   },
   styleCard: {
@@ -624,4 +669,4 @@ const styles = {
     color: '#1e3a8a',
     lineHeight: '1.4',
   },
-};
+});

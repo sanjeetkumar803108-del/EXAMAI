@@ -2,6 +2,9 @@ import React from 'react';
 import { Globe, Search, Cpu, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export default function LiveResearchModal({ currentStep, topic, profile }) {
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+  const styles = getStyles(isMobile);
+
   return (
     <div style={styles.backdrop}>
       <div style={styles.card} className="animate-fade-in">
@@ -14,7 +17,7 @@ export default function LiveResearchModal({ currentStep, topic, profile }) {
         </div>
 
         {/* Content */}
-        <h3 style={styles.title}>Live Profile Syllabus & Blueprint Research</h3>
+        <h3 style={styles.title}>Live Syllabus & Pattern Research</h3>
         <p style={styles.subtitle}>
           ExamAI is actively grounding "{topic}" exclusively for <strong>{profile?.targetExam || 'Your Exam'}</strong> ({profile?.grade || 'Class'}) according to the official syllabus and real exam question patterns.
         </p>
@@ -50,7 +53,7 @@ export default function LiveResearchModal({ currentStep, topic, profile }) {
   );
 }
 
-const styles = {
+const getStyles = (isMobile) => ({
   backdrop: {
     position: 'fixed',
     top: 0,
@@ -63,20 +66,22 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
-    padding: '16px',
+    padding: isMobile ? '8px' : '16px',
+    boxSizing: 'border-box',
   },
   card: {
     width: '100%',
     maxWidth: '480px',
     backgroundColor: '#ffffff',
-    borderRadius: '18px',
+    borderRadius: isMobile ? '16px' : '18px',
     border: '1px solid #e2e8f0',
-    padding: '32px 24px',
+    padding: isMobile ? '20px 14px' : '32px 24px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     textAlign: 'center',
     boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.15)',
+    boxSizing: 'border-box',
   },
   radarWrapper: {
     position: 'relative',
@@ -108,14 +113,14 @@ const styles = {
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
   },
   title: {
-    fontSize: '18px',
+    fontSize: isMobile ? '16px' : '18px',
     fontWeight: '800',
     color: '#0f172a',
     letterSpacing: '-0.4px',
     marginBottom: '6px',
   },
   subtitle: {
-    fontSize: '13px',
+    fontSize: isMobile ? '12px' : '13px',
     color: '#64748b',
     lineHeight: '1.4',
     marginBottom: '20px',
@@ -129,6 +134,7 @@ const styles = {
     padding: '12px 14px',
     textAlign: 'left',
     marginBottom: '18px',
+    boxSizing: 'border-box',
   },
   logHeader: {
     display: 'flex',
@@ -162,8 +168,9 @@ const styles = {
   },
   metaRow: {
     display: 'flex',
+    flexDirection: isMobile ? 'column' : 'row',
     alignItems: 'center',
-    gap: '16px',
+    gap: isMobile ? '6px' : '16px',
     fontSize: '11.5px',
     color: '#64748b',
   },
@@ -172,4 +179,4 @@ const styles = {
     alignItems: 'center',
     gap: '5px',
   },
-};
+});

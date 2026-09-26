@@ -2,6 +2,9 @@ import React from 'react';
 import { CreditCard, Check, X, ShieldCheck, Zap, Sparkles } from 'lucide-react';
 
 export default function SubscriptionModal({ onClose, testsRemaining = 28, totalTests = 30 }) {
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+  const styles = getStyles(isMobile);
+
   return (
     <div style={styles.backdrop}>
       <div style={styles.modal} className="animate-fade-in">
@@ -86,7 +89,7 @@ export default function SubscriptionModal({ onClose, testsRemaining = 28, totalT
   );
 }
 
-const styles = {
+const getStyles = (isMobile) => ({
   backdrop: {
     position: 'fixed',
     top: 0,
@@ -99,16 +102,20 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
-    padding: '16px',
+    padding: isMobile ? '8px' : '16px',
+    boxSizing: 'border-box',
   },
   modal: {
     width: '100%',
     maxWidth: '500px',
     backgroundColor: '#ffffff',
-    borderRadius: '18px',
+    borderRadius: isMobile ? '16px' : '18px',
     border: '1px solid #e2e8f0',
-    padding: '28px',
+    padding: isMobile ? '18px 14px' : '28px',
     boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.15)',
+    maxHeight: isMobile ? '94vh' : '90vh',
+    overflowY: 'auto',
+    boxSizing: 'border-box',
   },
   header: {
     display: 'flex',
@@ -269,11 +276,11 @@ const styles = {
   },
   okBtn: {
     width: '100%',
-    padding: '11px',
+    padding: isMobile ? '13px' : '11px',
     backgroundColor: '#0f172a',
     color: '#ffffff',
     borderRadius: '9px',
     fontSize: '13.5px',
     fontWeight: '700',
   },
-};
+});
