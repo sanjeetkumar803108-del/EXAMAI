@@ -8,15 +8,18 @@ import ExamPaperView from './components/ExamPaperView';
 import AnswerEvaluationModal from './components/AnswerEvaluationModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import { ToastProvider, useToast } from './components/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
 import { performLiveWebResearch, generateExamPaper, evaluateStudentAnswers } from './services/aiGenerator';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default function App() {
   return (
-    <ToastProvider>
-      <MainApp />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <MainApp />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -25,8 +28,12 @@ function MainApp() {
 
   // Auth state
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('examai_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('examai_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
   // Listen for persistent Firebase auth state (vital for Mobile Google Redirects)
@@ -42,7 +49,11 @@ function MainApp() {
           createdAt: new Date().toISOString(),
         };
         setUser(userData);
-        localStorage.setItem('examai_user', JSON.stringify(userData));
+        try {
+          localStorage.setItem('examai_user', JSON.stringify(userData));
+        } catch (e) {
+          console.warn('Failed to save user:', e);
+        }
       }
     });
     return () => unsubscribe();
@@ -50,15 +61,41 @@ function MainApp() {
 
   // Profile state
   const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('examai_profile');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('examai_profile');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
-  // App & Exam Paper states
+  // App & Exam Paper states (with safe validation so corrupt cached data never blocks app launch)
   const [currentPaper, setCurrentPaper] = useState(() => {
-    const saved = localStorage.getItem('examai_last_paper');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('examai_last_paper');
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      if (parsed && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+        return parsed;
+      }
+      return null;
+    } catch (e) {
+      console.warn('Failed to parse cached paper from storage:', e);
+      try {
+        localStorage.removeItem('examai_last_paper');
+      } catch {}
+      return null;
+    }
   });
+
+  const handleResetPaper = () => {
+    try {
+      localStorage.removeItem('examai_last_paper');
+    } catch (e) {
+      console.warn('Failed to remove cached paper:', e);
+    }
+    setCurrentPaper(null);
+  };
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [researchStep, setResearchStep] = useState('');
@@ -216,11 +253,13 @@ function MainApp() {
       {/* Main Content Area */}
       <main style={styles.main}>
         {currentPaper ? (
-          <ExamPaperView
-            paper={currentPaper}
-            onEvaluate={handleEvaluateAnswers}
-            onReset={() => setCurrentPaper(null)}
-          />
+          <ErrorBoundary onReset={handleResetPaper}>
+            <ExamPaperView
+              paper={currentPaper}
+              onEvaluate={handleEvaluateAnswers}
+              onReset={handleResetPaper}
+            />
+          </ErrorBoundary>
         ) : (
           <PaperGenerator
             profile={profile}

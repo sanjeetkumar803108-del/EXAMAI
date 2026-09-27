@@ -7,9 +7,10 @@ export default function PaperGenerator({ profile, onGenerate, isGenerating }) {
   const [questionCount, setQuestionCount] = useState(20);
   const [difficulty, setDifficulty] = useState('Standard');
   const [showOptions, setShowOptions] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 640 : false));
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);

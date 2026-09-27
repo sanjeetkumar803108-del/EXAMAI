@@ -10,14 +10,35 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
   const [showSolutions, setShowSolutions] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(paper.timeAllowed.includes('90') ? 90 * 60 : 180 * 60);
+
+  // Safe time allowed parser
+  const parseInitialSeconds = (timeStr) => {
+    if (!timeStr || typeof timeStr !== 'string') return 180 * 60;
+    if (timeStr.includes('90')) return 90 * 60;
+    if (timeStr.includes('60') || timeStr.includes('1 hour') || timeStr.includes('1 Hr')) return 60 * 60;
+    if (timeStr.includes('120') || timeStr.includes('2 hour') || timeStr.includes('2 Hr')) return 120 * 60;
+    return 180 * 60;
+  };
+
+  const [secondsLeft, setSecondsLeft] = useState(() => parseInitialSeconds(paper?.timeAllowed));
+
+  // Extract all questions safely
+  const allQuestions = Array.isArray(paper?.sections)
+    ? paper.sections.flatMap((s) => (Array.isArray(s?.questions) ? s.questions : []))
+    : [];
+  const totalQuestions = allQuestions.length;
+  const answeredCount = Object.keys(studentAnswers).filter((qId) => {
+    const ans = studentAnswers[qId];
+    return typeof ans === 'string' ? ans.trim().length > 0 : Boolean(ans);
+  }).length;
 
   // Ask AI Doubt Assistant modal state
   const [showAskAIModal, setShowAskAIModal] = useState(false);
   const [askAIInitialQ, setAskAIInitialQ] = useState(1);
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 640 : false));
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -63,6 +84,31 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
   };
 
   const styles = getStyles(isMobile);
+
+  if (!paper || !Array.isArray(paper.sections)) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+        <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '16px' }}>
+          No examination paper loaded.
+        </p>
+        <button
+          type="button"
+          onClick={onReset}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#0f172a',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600',
+          }}
+        >
+          Return to Generator
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container} className="animate-fade-in">
@@ -146,7 +192,7 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
           <div style={styles.researchPillBar}>
             <Sparkles size={14} color="#2563eb" />
             <span>
-              Official Blueprint Grounded: <strong>{paper.studentProfile?.targetExam || paper.title}</strong> • {paper.board} • {paper.researchHighlights.detectedSubject} • {paper.researchHighlights.negativeMarking && paper.researchHighlights.negativeMarking !== 'None' ? paper.researchHighlights.negativeMarking : 'Standard Marking'} • Anti-Duplication Active (0 Duplicates)
+              Official Blueprint Grounded: <strong>{paper.studentProfile?.targetExam || paper.title || 'Exam'}</strong> • {paper.board || 'Authority'} • {paper.researchHighlights.detectedSubject || paper.subject || 'Subject'} • {paper.researchHighlights.negativeMarking && paper.researchHighlights.negativeMarking !== 'None' ? paper.researchHighlights.negativeMarking : 'Standard Marking'} • Anti-Duplication Active (0 Duplicates)
             </span>
           </div>
         )}
@@ -161,22 +207,22 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
               ))}
             </div>
           </div>
-          <span style={styles.paperCodeText}>Paper Code: {paper.paperCode}</span>
+          <span style={styles.paperCodeText}>Paper Code: {paper.paperCode || 'EXAM-SET-A'}</span>
         </div>
 
         {/* Paper Header */}
         <div style={styles.examHeader}>
-          <h2 style={styles.examTitle}>{paper.title}</h2>
-          <h3 style={styles.examBoard}>{paper.board}</h3>
+          <h2 style={styles.examTitle}>{paper.title || 'EXAMINATION PAPER'}</h2>
+          <h3 style={styles.examBoard}>{paper.board || 'Academic Board'}</h3>
           <div style={styles.examSubject}>
-            <span>SUBJECT: {paper.subject}</span>
+            <span>SUBJECT: {paper.subject || 'General'}</span>
             <span style={{ margin: '0 8px' }}>•</span>
-            <span>TOPIC: "{paper.topic.toUpperCase()}"</span>
+            <span>TOPIC: "{(paper.topic || '').toUpperCase()}"</span>
           </div>
 
           <div style={styles.timeMarksRow}>
-            <span>TIME ALLOWED: {paper.timeAllowed.toUpperCase()}</span>
-            <span>MAXIMUM MARKS: {paper.maxMarks}</span>
+            <span>TIME ALLOWED: {(paper.timeAllowed || '3 Hours').toUpperCase()}</span>
+            <span>MAXIMUM MARKS: {paper.maxMarks ?? 100}</span>
           </div>
         </div>
 
@@ -193,7 +239,7 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
 
           {showInstructions && (
             <ol style={styles.instructionsList}>
-              {paper.generalInstructions.map((inst, idx) => (
+              {(paper.generalInstructions || []).map((inst, idx) => (
                 <li key={idx} style={styles.instructionItem}>
                   <MathRenderer text={inst} />
                 </li>
@@ -203,12 +249,12 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
         </div>
 
         {/* Paper Sections */}
-        {paper.sections.map((section, sIdx) => (
+        {(paper.sections || []).map((section, sIdx) => (
           <div key={sIdx} style={styles.sectionBlock}>
             {/* Section Header */}
             <div style={styles.sectionHeader}>
-              <span style={styles.sectionBadge}>{section.name}</span>
-              <span style={styles.sectionDesc}>{section.description}</span>
+              <span style={styles.sectionBadge}>{section.name || `Section ${sIdx + 1}`}</span>
+              <span style={styles.sectionDesc}>{section.description || ''}</span>
             </div>
 
             {/* Reading Passage Box if section has reading/case context */}
@@ -224,11 +270,11 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
 
             {/* Questions */}
             <div style={styles.questionsList}>
-              {section.questions.map((q) => {
+              {(section.questions || []).map((q) => {
                 const studentAns = studentAnswers[q.id] || '';
 
                 return (
-                  <div key={q.id} style={styles.questionItem}>
+                  <div key={q.id || `q_${Math.random()}`} style={styles.questionItem}>
                     {/* Q Header */}
                     <div style={styles.questionTop}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -250,12 +296,13 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
                       <FormattedQuestionBody text={q.text} />
 
                       {/* MCQ Options */}
-                      {q.type === 'mcq' && q.options && (
+                      {q.type === 'mcq' && Array.isArray(q.options) && q.options.length > 0 && (
                         <div style={styles.optionsGrid}>
                           {q.options.map((opt, oIdx) => {
-                            const optChar = opt.charAt(0);
+                            const optStr = typeof opt === 'string' ? opt : String(opt || '');
+                            const optChar = optStr.charAt(0) || String.fromCharCode(65 + oIdx);
                             const isSelected = studentAns === optChar;
-                            const optBody = opt.replace(/^[A-E][).:\s]\s*/, '');
+                            const optBody = optStr.replace(/^[A-E][).:\s]\s*/, '') || optStr;
 
                             return (
                               <button
@@ -309,7 +356,7 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
                           </div>
                           <FormattedQuestionBody text={q.correctAnswer} customTextStyle={styles.solText} />
 
-                          {q.stepMarkingScheme && (
+                          {Array.isArray(q.stepMarkingScheme) && q.stepMarkingScheme.length > 0 && (
                             <div style={styles.rubricSteps}>
                               {q.stepMarkingScheme.map((step, stIdx) => (
                                 <div key={stIdx} style={styles.rubricItem}>

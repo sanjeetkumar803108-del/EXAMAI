@@ -44,7 +44,7 @@ export default function AnswerEvaluationModal({ evaluation, onClose }) {
         </div>
 
         <div style={styles.questionsContainer}>
-          {evaluation.questions.map((q, idx) => {
+          {(evaluation.questions || []).map((q, idx) => {
             const isFullMarks = q.marksEarned === q.marksPossible;
             const isZeroMarks = q.marksEarned === 0;
 
