@@ -47,182 +47,12 @@ export function saveQuestionHistory(topic, newQuestions) {
 }
 
 // Dedicated Question Style & Typology directives enforcing authentic examination patterns
+// Question Style Directive (clean and open for custom AI training)
 export function getQuestionStyleDirective(styleId, countryCode = 'in') {
   if (!styleId || styleId === 'mixed') {
-    return `STANDARD AUTHENTIC BLUEPRINT MIX:
-Follow the authentic distribution of question types customary for this national examination board (composite MCQs, conceptual short answer, analytical case/long questions).`;
+    return '';
   }
-
-  // Japan Formats
-  if (styleId === 'jp_kumiawase') {
-    return `MANDATORY JAPANESE "KUMIAWASE" (COMBINATION MATRIX) FORMAT:
-Every multiple-choice problem MUST strictly emulate the authentic Japanese National Center Test / Kyōtsū Test / Daigaku Nyūshi combination matrix standard:
-1. Provide a detailed problem context followed by 3 or 4 proposition statements labeled [a], [b], [c] (or [I], [II], [III]).
-2. The examinee must determine which combination of statements is correct/valid.
-3. The options MUST be structured as an exhaustive combination matrix with 6 to 8 numbered options:
-   1) [a] only
-   2) [b] only
-   3) [c] only
-   4) [a] and [b]
-   5) [a] and [c]
-   6) [b] and [c]
-   7) [a], [b], and [c]
-   8) None of the statements
-Ensure genuine logical rigor where deducing the answer requires checking individual propositions.`;
-  }
-
-  if (styleId === 'jp_socratic') {
-    return `MANDATORY JAPANESE SOCRATIC DIALOGUE INTERPRETATION FORMAT:
-The question stem MUST present an authentic academic classroom dialogue between named students and instructor (e.g. Student Taro, Student Hanako, and Teacher Yamada) discussing a nuanced phenomenon, experimental observation, or problem.
-Each participant puts forward hypotheses, deductions, or criticisms.
-The question must ask the candidate to identify:
-- Which student's deduction contains a logical fallacy or incorrect premise, OR
-- Which conclusion logically follows from the consensus of the dialogue.
-Options must evaluate speaker arguments directly.`;
-  }
-
-  if (styleId === 'jp_algorithm') {
-    return `MANDATORY JAPANESE LOGIC & ALGORITHM TRACE FLOW FORMAT:
-Present a formal procedure, state transition diagram, or structured pseudo-code algorithm (with loops, conditions, and variables) modeling a physical, mathematical, or chemical process.
-The question asks candidates to trace variable states, loop iterations, or deduce the final return value for given initial conditions.`;
-  }
-
-  if (styleId === 'jp_document') {
-    return `MANDATORY JAPANESE PRIMARY DOCUMENT CONFRONTATION FORMAT:
-Present two contrasting or complementary source texts/excerpts (Source A and Source B).
-The question requires the candidate to critically contrast the premises, evaluate methodological discrepancies, or synthesize the underlying principle.`;
-  }
-
-  if (styleId === 'jp_mixed') {
-    return `MANDATORY DAIGAKU NYŪSHI COMPOSITE ENTRANCE EXAM MIX:
-Provide the full authentic Japanese national university entrance examination structure: Section 1 Kumiawase combination items, Section 2 Dialogue/source analysis, Section 3 Multi-stage mathematical/logical deduction.`;
-  }
-
-  // USA Formats
-  if (styleId === 'us_evidence') {
-    return `MANDATORY DIGITAL SAT TWO-PART EVIDENCE-PAIRED FORMAT:
-Structure questions as paired investigative items:
-- Part 1 tests a high-level deductive inference, claim evaluation, or scientific conclusion based on a premise.
-- Part 2 (or the immediate follow-up) asks: "Which choice provides the best evidence for the answer to the previous question?" with 4 verbatim quoted sentence excerpts or data points from the premise as options.`;
-  }
-
-  if (styleId === 'us_dbq') {
-    return `MANDATORY AP DOCUMENT-BASED QUESTION (DBQ) FORMAT:
-Provide 4-5 curated primary/secondary documentary sources or experimental data snippets (Document 1, Document 2, Document 3, etc.).
-The prompt requires the student to formulate a defensible thesis, analyze historical or scientific context, and evaluate sourcing (bias, purpose, audience) across the documents.`;
-  }
-
-  if (styleId === 'us_gridin') {
-    return `MANDATORY DIGITAL SAT / AP STUDENT-PRODUCED RESPONSE (GRID-IN):
-100% of the questions in this format MUST be non-MCQ numerical / calculation problems.
-DO NOT provide multiple choice options ('options': []).
-The student must compute the exact fraction, integer, or decimal answer. Include full step-by-step arithmetic/algebraic solution.`;
-  }
-
-  if (styleId === 'us_frq_experimental') {
-    return `MANDATORY AP EXPERIMENTAL DESIGN FREE-RESPONSE (FRQ) FORMAT:
-Present a laboratory investigation scenario.
-The question must have structured subparts:
-(a) State an appropriate hypothesis and identify independent/dependent variables.
-(b) Design the laboratory procedure, apparatus list, and measurements.
-(c) Predict the experimental curve / graph with labeled axes.
-(d) Error analysis: explain how a specific source of systematic or random error affects the calculated outcome.`;
-  }
-
-  // UK Formats
-  if (styleId === 'uk_synoptic') {
-    return `MANDATORY CAMBRIDGE / EDEXCEL A-LEVEL SYNOPTIC FORMAT:
-The question MUST be synoptic — synthesizing concepts with at least one other major domain of the curriculum.
-Students must demonstrate cross-modular mastery and deep thematic synthesis.`;
-  }
-
-  if (styleId === 'uk_anomaly') {
-    return `MANDATORY UK EXPERIMENTAL DATA RESPONSE & ANOMALY EVALUATION:
-Provide a realistic laboratory measurement table with an anomalous data point (outlier).
-The questions require:
-(a) Identifying the anomalous reading and justifying why it should be excluded from the mean.
-(b) Calculating percentage uncertainty and absolute error.
-(c) Evaluating experimental limitations and proposing specific apparatus refinements.`;
-  }
-
-  if (styleId === 'uk_lor') {
-    return `MANDATORY UK LEVEL OF RESPONSE (LoR) EXTENDED PROSE:
-Provide a 6-mark structured descriptive question marked on Level of Response criteria (Level 1, Level 2, Level 3).
-The question requires a coherent, logically sequenced scientific argument explaining the mechanism or phenomenon.`;
-  }
-
-  if (styleId === 'uk_practical') {
-    return `MANDATORY UK PRACTICAL ENDORSEMENT & CPAC UNCERTAINTY:
-Questions focus on apparatus resolution, percentage uncertainty calculation, propagation of errors, and calibration curves.`;
-  }
-
-  // France Formats
-  if (styleId === 'fr_dissertation') {
-    return `MANDATORY LE BACCALAURÉAT DISSERTATION PHILOSOPHIQUE FORMAT:
-The prompt must be formulated as a profound dialectical interrogation (e.g. "Dans quelle mesure... ?", "Peut-on affirmer que... ?").
-Provide explicit structural evaluation criteria following the French 3-part dialectic:
-- Thèse (affirmation and foundational arguments)
-- Antithèse (contradictions, limitations, and counter-arguments)
-- Synthèse (philosophical/scientific transcendence and resolution).`;
-  }
-
-  if (styleId === 'fr_commentaire') {
-    return `MANDATORY LE BACCALAURÉAT COMMENTAIRE DE TEXTE FORMAT:
-Provide an authoritative excerpt or scientific thesis.
-The task requires an exhaustive micro-analysis: analyzing lexical fields, logical connectors, underlying epistemological presuppositions, and authorial stance.`;
-  }
-
-  // Germany Formats
-  if (styleId === 'de_afb3') {
-    return `MANDATORY GERMAN ABITUR AFB-III OPERATOR FORMAT:
-Questions must be explicitly governed by KMK standardized Anforderungsbereich III operators:
-- "Beurteilen" (evaluate based on scientific/objective criteria)
-- "Stellung nehmen" (take a reasoned stand weighing ethical/societal implications)
-- "Überprüfen" (verify a thesis against experimental evidence).
-Include a clear expectation horizon (Erwartungshorizont) in the marking scheme.`;
-  }
-
-  if (styleId === 'de_quellenkritik') {
-    return `MANDATORY QUELLENKRITIK (SOURCE BIAS & CRITIQUE) FORMAT:
-Provide an excerpt or historical report.
-Tasks require:
-1. Identifying source type, author stance, and intended audience.
-2. Deconstructing underlying biases, omissions, and rhetorical strategies.`;
-  }
-
-  // India Formats
-  if (styleId === 'in_ar') {
-    return `MANDATORY 100% ASSERTION-REASON (A & R) FORMAT:
-Every single question in this paper MUST be an authentic Assertion-Reason question:
-Context and statements:
-Assertion (A): [Statement]
-Reason (R): [Explanation Statement]
-Options MUST be the standardized 4 options:
-A) Both (A) and (R) are true and (R) is the correct explanation of (A).
-B) Both (A) and (R) are true but (R) is NOT the correct explanation of (A).
-C) (A) is true but (R) is false.
-D) (A) is false but (R) is true.`;
-  }
-
-  if (styleId === 'in_case_study') {
-    return `MANDATORY CBSE / COMPETENCY CASE-BASED INTEGRATED FORMAT:
-Structure questions around detailed, contextual case vignettes (150-250 words) from real-world industrial, medical, or technological applications.
-Each case study is followed by 4 sub-questions: (i) MCQ/Objective 1M, (ii) Conceptual 1M, (iii) Analytical/Calculation 2M (with internal choice).`;
-  }
-
-  if (styleId === 'in_numerical') {
-    return `MANDATORY JEE MAIN / ADVANCED NUMERICAL VALUE FORMAT:
-Questions must be pure calculation problems without options ('options': []).
-The answer must be a precise integer or decimal value. Provide complete derivation and formula substitution in the step marking scheme.`;
-  }
-
-  if (styleId === 'in_pure_mcq') {
-    return `MANDATORY 100% PURE MULTIPLE CHOICE (MCQ) FORMAT:
-Every question MUST be a high-precision multiple choice question with exactly 4 options (A, B, C, D) testing conceptual clarity, formula application, and elimination techniques.`;
-  }
-
-  return `AUTHENTIC NATIONAL EXAM TYPOLOGY:
-Strictly emulate the question structure, operator taxonomy, and response format designated by the '${styleId}' benchmark for ${countryCode.toUpperCase()}.`;
+  return `Question Format: ${styleId}`;
 }
 
 // Stage 1: Live Deep Web Research on Official Exam Blueprint, Sections & Marking Scheme
@@ -552,111 +382,39 @@ CRITICAL: DO NOT repeat any of the above questions, question stems, or options! 
         }
       ];
 
-  const prompt = `You are the Chief Examination Paper Setter for ${exam} (${country}, Grade: ${grade}).
-You are creating an authentic, 100% REAL standardized examination paper strictly conforming to the official ${boardName} blueprint and requested national question format.
-
-NATIONAL EXAM QUESTION TYPOLOGY MANDATE:
-Format Key: "${questionStyle}"
-${styleDirective}
-
-LIVE RESEARCH BLUEPRINT:
-- Exam: ${exam} (${grade})
-- Country / Jurisdiction: ${country} (${countryObj?.flag || ''})
-- Authority: ${boardName}
-- Subject: ${detectedSubject} ${subjectCode ? `[Subject Code: ${subjectCode}]` : ''}
+  const prompt = `You are an Examination Paper Creator for ${exam} (${country}, Grade: ${grade}).
+Create an examination paper for:
+- Topic: "${topic}"
+- Subject: ${detectedSubject} ${subjectCode ? `(${subjectCode})` : ''}
+- Board: ${boardName}
 - Maximum Marks: ${maxMarks}
 - Time Allowed: ${timeAllowed}
-- Calculator Policy: ${calculatorPolicy}
-- Topic / Chapter to test: "${topic}"
-- Core Syllabus Concepts: ${researchData?.coreConcepts ? researchData.coreConcepts.join(', ') : topic}
-- Recurring PYQ Trends & Board Patterns: ${researchData?.pyqTrends ? researchData.pyqTrends.join('; ') : 'Standard past board examination problem formats'}
-- Examiner Focus & Conceptual Traps: ${researchData?.examinerFocus ? researchData.examinerFocus.join('; ') : 'Core derivations and numerical problem solving'}
-- Official Section Structure:
-${sectionsBlueprintDescription}
-
-NON-NEGOTIABLE COMPLIANCE & QUALITY RULES ACROSS ALL EXAM BOARDS:
-
-1. AUTHENTIC QUESTION TYPOLOGY IMPLEMENTATION:
-   - ASSERTION-REASON QUESTIONS:
-     If the exam is CBSE, NEET, AIIMS, or competitive STEM, include 1-2 authentic Assertion-Reason questions in the objective section:
-     In 'text', ONLY write the context, Assertion (A), and Reason (R). Example:
-     "Directions: In the following question, a statement of Assertion (A) is followed by a statement of Reason (R).
-     Assertion (A): ...
-     Reason (R): ..."
-     CRITICAL: DO NOT embed choices A), B), C), D) inside 'text'.
-     Supply the 4 choices strictly in 'options':
-     [
-       "A) Both (A) and (R) are true, and (R) is the correct explanation of (A).",
-       "B) Both (A) and (R) are true, but (R) is not the correct explanation of (A).",
-       "C) (A) is true, but (R) is false.",
-       "D) (A) is false, but (R) is true."
-     ]
-   - NUMERICAL VALUE / INTEGER QUESTIONS:
-     If a section has format NUMERICAL (e.g., JEE Main Section B, SAT Grid-in, GATE):
-     DO NOT generate options ('options': []). The question must ask the candidate to compute a numerical value. 'correctAnswer' must be the exact calculated numerical value (e.g. '12' or '4.5') with complete step-by-step working in the rubric.
-   - MATCH-THE-COLUMNS:
-     If the exam is NEET, UPSC, or competitive biology/chemistry, include authentic Match Column-I with Column-II format.
-   - CASE-BASED / INTEGRATED SOURCE STUDIES:
-     If the exam has Case Studies (e.g. CBSE Section E, SAT Evidence), provide an authentic 150-250 word contextual case study or experimental data scenario, followed by subquestions (i), (ii), (iii) with allocated marks.
-   - MULTI-PART FREE-RESPONSE (FRQ):
-     If the exam is AP, IB, or A-Levels, generate multi-part questions (a, b, c, d) with step rubrics totaling that question's marks.
-
-2. ZERO MISSING GRAPHS & DIAGRAMS (UNIVERSAL SELF-CONTAINED GEOMETRY & SCHEMATICS):
-   - For Physics Circuits: Explicitly specify every component value (e.g., 'Resistors R1 = 4 ohms and R2 = 6 ohms in parallel, connected in series with battery V = 12 V and internal resistance r = 1 ohm') and all branch connections.
-   - For Thermodynamic Cycles (P-V diagrams): Explicitly specify every state point (P1, V1), (P2, V2) and the exact process path (isobaric expansion, isothermal compression, adiabatic, isochoric).
-   - For Kinematics & Calculus Curves: Explicitly specify all piecewise endpoints, vertices, radii, and curve equations.
-   - For Ray Optics: Explicitly specify focal lengths, object distances, and refractive indices.
-   - NEVER say "as shown in the figure above" or "shown in the diagram" without providing the 100% complete, unambiguous mathematical & descriptive definition.
-
-3. MANDATORY MARKDOWN DATA TABLES:
-   - Whenever questions test chemical rate laws, kinematics measurements, Riemann sums, economics national income schedules, biology phenotypic ratios, or statistics frequency distributions:
-     You MUST generate a full, clean Markdown data table with column headers and units inside the question text!
-     Example:
-     | t (seconds) | 0 | 10 | 20 | 30 | 40 |
-     | v(t) (m/s)  | 0 | 14 | 22 | 29 | 35 |
-     NEVER refer to tabular data without printing the full table!
-
-4. STRICT SINGLE-CORRECT MCQ VALIDATION & NO DUPLICATE OPTIONS:
-   - Every multiple-choice question MUST have EXACTLY ONE unambiguously correct answer.
-   - STRICTLY FORBID duplicate or mathematically identical options under different algebraic forms!
-     (e.g., NEVER put both "-ln|cos(x)| + C" and "ln|sec(x)| + C" as separate options! Choose only ONE, and ensure the other 3 options are distinct, plausible distractors).
-   - Double-check every derivative, integral, formula, and calculation before emitting options. Distractors must represent real student misconceptions (sign error, forgot chain rule factor, reciprocal flip).
-
-5. FLAWLESS MATHEMATICAL & SCIENTIFIC NOTATION:
-   - For mathematical equations, formulas, and expressions, use standard clean LaTeX with inline delimiters \( ... \) (e.g. \( f(x) = x^3 - 6x^2 + 9x \), \( \frac{dy}{dx} = \frac{3x^2}{2y} \), \( \int_{0}^{1} 3x^2 dx \), \( \lim_{x \to 0} \frac{\sin(3x)}{x} \)).
-   - For physical quantities, units, and powers, use standard exponents (e.g. 9.8 m/s^2, 1.6 x 10^-19 C, e^-2t, cm^3, H2O, CO2).
-   - NEVER output broken tags like "\/frac" or unmatched delimiters or dangling braces. Ensure every \( is paired with a \).
-
-6. COMPLETE READING PASSAGE REQUIRED FOR LITERATURE/LANGUAGE:
-   - If any section is "Reading Skills" or "Reading Comprehension" or "Case Study": You MUST provide a FULL, COMPLETE reading passage (250-350 words) under the section "passage" field!
-   - NEVER tell the candidate "Read the passage carefully" without generating the actual passage!
-
-7. EXACT MARKS TOTALING & BLUEPRINT FIDELITY:
-   - Generate questions across the exact official sections specified in the blueprint.
+${calculatorPolicy ? `- Calculator Policy: ${calculatorPolicy}` : ''}
+${styleDirective ? `- Format: ${styleDirective}` : ''}
 ${exclusionClause}
+
+${sectionsBlueprintDescription ? `Sections:\n${sectionsBlueprintDescription}` : ''}
 
 Format response ONLY as valid JSON matching this schema:
 {
-  "title": "${exam.toUpperCase()} EXAMINATION 2026",
+  "title": "${exam.toUpperCase()} EXAMINATION",
   "board": "${boardName}",
   "subject": "${detectedSubject.toUpperCase()} ${subjectCode ? `(${subjectCode})` : ''}",
   "topic": "${topic}",
-  "paperCode": "EXAM-2026-SET-${Math.floor(100 + Math.random() * 900)}",
+  "paperCode": "EXAM-SET-${Math.floor(100 + Math.random() * 900)}",
   "timeAllowed": "${timeAllowed}",
   "maxMarks": ${maxMarks},
   "calculatorPolicy": "${calculatorPolicy}",
   "researchHighlights": {
     "detectedSubject": "${detectedSubject}",
     "subjectCode": "${subjectCode}",
-    "syllabusSource": "${researchData?.syllabusSource || 'Official Board Curriculum'}",
+    "syllabusSource": "${researchData?.syllabusSource || 'Official Curriculum'}",
     "officialMarks": ${maxMarks},
     "officialTime": "${timeAllowed}",
     "negativeMarking": "${researchData?.negativeMarking || 'None'}"
   },
   "generalInstructions": [
     "Read all instructions carefully before answering.",
-    "This question paper conforms strictly to official ${boardName} blueprint.",
-    "${calculatorPolicy}",
     "All questions are compulsory."
   ],
   "sections": ${JSON.stringify(dynamicSections, null, 2)}
@@ -687,64 +445,36 @@ Format response ONLY as valid JSON matching this schema:
 
   const parsed = JSON.parse(rawText);
 
-  // Post-process, sanitize math, and enforce option integrity
+  // Post-process, sanitize math, and ensure question IDs
   let qNum = 1;
   let totalCalculatedMarks = 0;
-  parsed.sections.forEach((section) => {
-    if (section.passage) {
-      section.passage = sanitizeMathText(section.passage);
-    }
-    section.questions.forEach((q) => {
-      q.questionNumber = qNum;
-      q.id = `q_${qNum}`;
-      qNum++;
-      // Ensure marks are strictly positive integers (no .33, .67 or bizarre decimals)
-      let cleanMarks = Number(q.marks) || 1;
-      cleanMarks = Math.max(1, Math.round(cleanMarks));
-      q.marks = cleanMarks;
-      totalCalculatedMarks += cleanMarks;
-
-      // Sanitize question text, answer, and explanation
-      q.text = sanitizeMathText(q.text);
-
-      // Prevent duplicate option blocks inside Assertion-Reason question text
-      if (q.type === 'mcq' && Array.isArray(q.options) && q.options.length > 0) {
-        if (/Assertion\s*\(A\)/i.test(q.text) && /Reason\s*\(R\)/i.test(q.text)) {
-          q.text = q.text.replace(/(?:Choose(?:\s+the\s+correct(?:\s+alternative|\s+option)?)?:?\s*\n*)?(?:^[A-D]\s*[\).:-]\s*[^\n]+(?:\r?\n|$)){3,5}/gim, '').trim();
-        }
+  if (Array.isArray(parsed.sections)) {
+    parsed.sections.forEach((section) => {
+      if (section.passage) {
+        section.passage = sanitizeMathText(section.passage);
       }
-      if (q.correctAnswer) q.correctAnswer = sanitizeMathText(q.correctAnswer);
-      if (q.explanation) q.explanation = sanitizeMathText(q.explanation);
-      if (q.stepMarkingScheme) {
-        q.stepMarkingScheme = q.stepMarkingScheme.map((s) => {
-          let str = sanitizeMathText(s);
-          str = str.replace(/0\.7[0-9]\s*Marks?/gi, '1 Mark');
-          str = str.replace(/0\.3[0-9]\s*Marks?/gi, '0.5 Mark');
-          str = str.replace(/2\.3[0-9]\s*Marks?/gi, '2 Marks');
-          return str;
-        });
-      }
+      if (Array.isArray(section.questions)) {
+        section.questions.forEach((q) => {
+          q.questionNumber = qNum;
+          q.id = `q_${qNum}`;
+          qNum++;
+          const cleanMarks = Number(q.marks) || 1;
+          q.marks = cleanMarks;
+          totalCalculatedMarks += cleanMarks;
 
-      // Check and sanitize MCQ options
-      if (q.type === 'mcq' && Array.isArray(q.options)) {
-        const seenOptions = new Set();
-        q.options = q.options.map((opt, idx) => {
-          const letter = ['A', 'B', 'C', 'D', 'E'][idx] || `${idx + 1}`;
-          let cleaned = sanitizeMathText(opt);
-          let val = cleaned.replace(/^[A-E][).:\s]\s*/, '').trim();
-
-          if (!val) val = `Alternative formulation ${idx + 1}`;
-          const normalized = val.toLowerCase().replace(/\s+/g, '');
-          if (seenOptions.has(normalized)) {
-            val = `${val} (variant)`;
+          q.text = sanitizeMathText(q.text);
+          if (q.correctAnswer) q.correctAnswer = sanitizeMathText(q.correctAnswer);
+          if (q.explanation) q.explanation = sanitizeMathText(q.explanation);
+          if (Array.isArray(q.stepMarkingScheme)) {
+            q.stepMarkingScheme = q.stepMarkingScheme.map((s) => sanitizeMathText(s));
           }
-          seenOptions.add(normalized);
-
-          return `${letter}) ${val}`;
+          if (q.type === 'mcq' && Array.isArray(q.options)) {
+            q.options = q.options.map((opt) => sanitizeMathText(opt));
+          }
         });
       }
     });
-  });
+  }
 
   // Mathematically synchronize maxMarks so header ALWAYS matches sum of questions
   if (totalCalculatedMarks > 0) {
@@ -1077,42 +807,9 @@ export async function askAIQuestionTutor({
   const country = profile.countryName || profile.country || 'Global';
   const topic = paperContext.topic || 'Curriculum Subject';
 
-  let systemInstruction = '';
-  if (mode === 'explain_question') {
-    systemInstruction = `You are a friendly, encouraging master teacher and doubt-solving tutor for ${exam} (${grade}, ${country}).
-The student is practicing Question Q.${question.questionNumber} on the topic "${topic}".
-
-TASK: EXPLAIN THE QUESTION IN 4 CLEAR STRUCTURED STEPS (WITHOUT GIVING AWAY THE FINAL ANSWER):
-Provide your response in structured markdown with bold headings:
-### Step 1: What is this Question Really Asking?
-(Explain the core problem statement in simple, friendly, intuitive terms so the student clearly understands the objective.)
-
-### Step 2: Breaking Down Given Information & Clues
-(Highlight the given numbers, variables, constants, and boundary conditions.)
-
-### Step 3: Core Concepts, Theories & Formulas Needed
-(State the scientific principles, laws, or formulas that apply to this problem, formatted with LaTeX/KaTeX like $F = ma$ or $W = Fd\\cos\\theta$.)
-
-### Step 4: Step-by-Step Strategic Solving Guide
-(Give the student a logical roadmap to solve it themselves without directly revealing the final answer. Encourage them to try calculating it!)`;
-  } else {
-    systemInstruction = `You are a Chief Board Examiner and master subject specialist for ${exam} (${grade}, ${country}).
-The student needs a complete masterclass solution for Question Q.${question.questionNumber} on "${topic}".
-
-TASK: EXPLAIN THE FULL OFFICIAL ANSWER STEP-BY-STEP:
-Provide your response in structured markdown with bold headings:
-### Step 1: Official Correct Answer
-(State the final answer clearly. If MCQ, specify the correct option letter and exact option text.)
-
-### Step 2: Complete Step-by-Step Derivation & Solution
-(Provide exhaustive working: show formula substitution, intermediate calculations, unit conversions, and justifications formatted with clean math.)
-
-### Step 3: Official Marking Scheme & Step Rubric
-(Show how marks are awarded step-by-step according to ${exam} board rubrics totaling ${question.marks} mark(s).)
-
-### Step 4: Examiner's Pro-Tips & Common Pitfalls
-(Highlight common calculation or conceptual traps students make on this question and how to avoid losing marks.)`;
-  }
+  const systemInstruction = mode === 'explain_question'
+    ? `You are an AI Tutor for ${exam}. Explain Question Q.${question.questionNumber} clearly in simple, intuitive terms to help the student understand how to approach and solve it.`
+    : `You are an AI Tutor for ${exam}. Provide a clear, step-by-step complete solution and marking explanation for Question Q.${question.questionNumber}.`;
 
   let conversationParts = [];
   conversationParts.push({
