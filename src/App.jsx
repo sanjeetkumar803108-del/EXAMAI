@@ -3,13 +3,12 @@ import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
 import PaperGenerator from './components/PaperGenerator';
-import LiveResearchModal from './components/LiveResearchModal';
 import ExamPaperView from './components/ExamPaperView';
 import AnswerEvaluationModal from './components/AnswerEvaluationModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import { ToastProvider, useToast } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
-import { performLiveWebResearch, generateExamPaper, evaluateStudentAnswers } from './services/aiGenerator';
+import { generateExamPaper, evaluateStudentAnswers } from './services/aiGenerator';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
@@ -98,8 +97,6 @@ function MainApp() {
   };
 
   const [isGenerating, setIsGenerating] = useState(false);
-  const [researchStep, setResearchStep] = useState('');
-  const [activeResearchTopic, setActiveResearchTopic] = useState('');
 
   // Evaluation & Modals
   const [evaluationReport, setEvaluationReport] = useState(null);
@@ -143,7 +140,7 @@ function MainApp() {
     toast.success('Your educational profile and target exam have been saved.', 'Profile Saved');
   };
 
-  // Trigger Sample Paper Generation with Live Web Grounding & Gemini
+  // Trigger Sample Paper Generation with Gemini
   const handleGeneratePaper = async ({ topic, questionCount, difficulty, country, questionStyle }) => {
     if (!profile) {
       toast.info('Please configure your target exam and grade first.', 'Profile Required');
@@ -159,7 +156,6 @@ function MainApp() {
 
     try {
       setIsGenerating(true);
-      setActiveResearchTopic(topic);
 
       const effectiveCountry = country || profile?.country || 'in';
       const effectiveProfile = {
@@ -167,23 +163,11 @@ function MainApp() {
         country: effectiveCountry,
       };
 
-      // Step 1: Live Web Syllabus Grounding & Research with Country & Question Style
-      const researchData = await performLiveWebResearch(
-        topic,
-        effectiveProfile,
-        (stepText) => {
-          setResearchStep(stepText);
-        },
-        questionStyle
-      );
-
-      // Step 2: Gemini AI Question Paper Synthesis Grounded on Research & Style
       const paper = await generateExamPaper({
         topic,
         profile: effectiveProfile,
         questionCount,
         difficulty,
-        researchData,
         country: effectiveCountry,
         questionStyle,
       });
@@ -196,9 +180,9 @@ function MainApp() {
       setTestsRemaining(newRemaining);
       localStorage.setItem('examai_tests_remaining', newRemaining.toString());
 
-      const totalQ = paper.sections.reduce((acc, s) => acc + s.questions.length, 0);
+      const totalQ = paper.sections.reduce((acc, s) => acc + (s.questions ? s.questions.length : 0), 0);
       toast.success(
-        `Generated official ${paper.title || 'Exam Paper'} with ${totalQ} questions aligned with blueprint!`,
+        `Generated official ${paper.title || 'Exam Paper'} with ${totalQ} questions!`,
         'Exam Paper Ready'
       );
     } catch (err) {
@@ -209,7 +193,6 @@ function MainApp() {
       );
     } finally {
       setIsGenerating(false);
-      setResearchStep('');
     }
   };
 
@@ -268,15 +251,6 @@ function MainApp() {
           />
         )}
       </main>
-
-      {/* Live Web Research Visualization Modal */}
-      {isGenerating && (
-        <LiveResearchModal
-          currentStep={researchStep}
-          topic={activeResearchTopic}
-          profile={profile}
-        />
-      )}
 
       {/* Evaluation Report Modal */}
       {evaluationReport && (

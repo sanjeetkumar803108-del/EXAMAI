@@ -55,162 +55,17 @@ export function getQuestionStyleDirective(styleId, countryCode = 'in') {
   return `Question Format: ${styleId}`;
 }
 
-// Stage 1: Live Deep Web Research on Official Exam Blueprint, Sections & Marking Scheme
-export async function performLiveWebResearch(topic, profile, onProgress, questionStyle = 'mixed') {
-  const exam = profile.targetExam || 'Standardized Examination';
-  const country = profile.countryName || profile.country || 'Global';
-  const grade = profile.grade || 'Secondary';
-  const stream = profile.stream || 'General';
-
-  if (onProgress) onProgress(`Connecting to official curriculum registry for ${exam} (${country}) [Style: ${questionStyle}]...`);
-
-  const researchPrompt = `You are the Chief Examination Board Curriculum & Blueprint Specialist.
-Perform an exhaustive, deep curriculum & blueprint research for:
-- Target Exam: "${exam}"
-- Grade / Level: "${grade}"
-- Country / Jurisdiction: "${country}"
-- Stream / Focus: "${stream}"
-- Subject Topic / Chapter to test: "${topic}"
-- Requested Question Typology / Pattern: "${questionStyle}"
-
-Provide the real, official examination blueprint and structure:
-1. Exact Official Subject Name and Course / Subject Code (e.g., JEE Main Physics [JEE-PHY-01], NEET-UG Biology, CBSE Class 12 Chemistry [043], AP Calculus AB [AP-CALC-AB], Digital SAT Math, A-Levels Edexcel Mathematics, IB Diploma Physics HL, GCSE Science).
-2. Real Official Administering Authority / Board (e.g., NTA, College Board, CBSE, Cambridge CAIE, Edexcel, IB Organization, CISCE, ETS).
-3. Standard Total Maximum Marks, Standard Duration, and Calculator Policy.
-4. Exact Official Section Breakdown with authentic names, realistic question counts, marks per question, and negative marking rules:
-   - For JEE Main: Section A (20 MCQs, 4M each, -1 negative mark), Section B (10 Numerical Value questions, attempt 5, 4M each).
-   - For NEET: Section A (35 MCQs, 4M each, -1 negative mark), Section B (15 MCQs, attempt 10, 4M each, -1 negative mark).
-   - For CBSE: Section A (20 MCQs including 2 Assertion-Reason), Section B (5 VSA 2M), Section C (6 SA 3M), Section D (4 LA 5M), Section E (3 Case-Based 4M).
-   - For AP Calculus / Sciences: Section I (Multiple-Choice No Calc / Calc Required), Section II (Free-Response multi-part FRQs).
-   - For SAT: Module 1 & Module 2 with MCQs and Student-Produced Response.
-   - For other global exams: Exact official sections of that board.
-5. Authentic Question Typologies:
-   - Does this exam have Assertion-Reasoning (A/R) questions?
-   - Does this exam have Match-the-Columns or Statement I/II questions?
-   - Does this exam have Numerical Value / Integer questions without options?
-   - Does this exam have Case-Based / Data-Based integrated questions?
-   - Does this exam have multi-part Free-Response (FRQ) questions with sub-rubrics?
-6. Scope & Test Calibration:
-   - Determine if "${topic}" is a Single Chapter / Specific Topic OR a Full-Syllabus Mock Exam.
-   - For a Single Chapter / Specific Topic (e.g. "The Necklace", "Thermodynamics", "Organic Chemistry"):
-     Calibrate as an official Chapter Mastery & Unit Assessment for ${exam} (${country}):
-     * Scale total marks to a realistic, focused unit test (typically 25 to 35 marks, 45-60 minutes).
-     * Provide a diverse, non-repetitive distribution: Objective/MCQ check, Short Conceptual questions, 1 Case-Based/Extract study, and 1-2 Long Analytical questions.
-   - For Full-Syllabus / Broad Mock Exams (e.g. "Full Syllabus", "All Units", "Final Mock Paper"):
-     Replicate the full official board examination with exact official total marks (e.g. CBSE 80 Marks / 3 Hours, CBSE Science 70 Marks, JEE Main 300 Marks, NEET 720 Marks, AP 100 Composite, SAT 800) and full section allotments.
-7. High-Yield PYQs & Examiner Focus:
-   - Identify 3-5 recurring question types, derivations, or problem patterns asked by this board for "${topic}" in recent board/competitive papers.
-   - Identify common conceptual traps or pitfalls examiners test students on.
-
-Output ONLY valid JSON matching this schema:
-{
-  "detectedSubject": "Official Subject Name",
-  "subjectCode": "Official Code",
-  "officialBoard": "Administering Body",
-  "officialMaxMarks": 100,
-  "officialTime": "3 Hours",
-  "calculatorPolicy": "Explicit policy",
-  "negativeMarking": "e.g. +4 for correct, -1 for incorrect, 0 for unattempted",
-  "examType": "Competitive STEM / School Board / Standardized Aptitude / Pre-University",
-  "features": {
-    "hasAssertionReason": true,
-    "hasMatchColumns": false,
-    "hasNumericalValue": true,
-    "hasCaseBased": false,
-    "hasFreeResponse": false,
-    "requiresDataTables": true,
-    "requiresDiagramSpecs": true
-  },
-  "officialSections": [
-    {
-      "sectionCode": "SECTION A",
-      "officialName": "Section Name",
-      "questionType": "mcq / numerical / frq / case / subjective",
-      "calculatorAllowed": false,
-      "count": 5,
-      "marksPerQuestion": 4,
-      "negativeMarking": "-1 Mark",
-      "instructions": "Official instructions"
-    }
-  ],
-  "markingRules": ["Rule 1", "Rule 2"],
-  "coreConcepts": ["Concept 1", "Concept 2"],
-  "pyqTrends": ["Recurring Pattern 1", "Recurring Pattern 2"],
-  "examinerFocus": ["Examiner Focus 1", "Common Trap 2"]
-}`;
-
-  let researchResult = null;
-  for (const model of ACTIVE_MODELS) {
-    try {
-      const apiKey = getApiKey();
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: researchPrompt }] }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          researchResult = JSON.parse(text);
-          break;
-        }
-      }
-    } catch {
-      // Try next model
-    }
-  }
-
-  const subject = researchResult?.detectedSubject || exam;
-  const code = researchResult?.subjectCode ? ` [${researchResult.subjectCode}]` : '';
-  const board = researchResult?.officialBoard || 'Official Board';
-  const marks = researchResult?.officialMaxMarks || 100;
-  const time = researchResult?.officialTime || '3 Hours';
-  const neg = researchResult?.negativeMarking ? ` • Negative Marking: ${researchResult.negativeMarking}` : '';
-
-  if (onProgress) onProgress(`Discovered Official Blueprint: ${board} ${subject}${code} • ${marks} Marks • ${time}${neg}`);
-  await new Promise((r) => setTimeout(r, 600));
-
-  const f = researchResult?.features;
-  if (f) {
-    const activeFeatures = [];
-    if (f.hasAssertionReason) activeFeatures.push('Assertion-Reason');
-    if (f.hasMatchColumns) activeFeatures.push('Match Columns');
-    if (f.hasNumericalValue) activeFeatures.push('Numerical Value (Section B)');
-    if (f.hasCaseBased) activeFeatures.push('Case-Based Studies');
-    if (f.hasFreeResponse) activeFeatures.push('Multi-Part FRQ');
-    if (activeFeatures.length > 0) {
-      if (onProgress) onProgress(`Exam Question Typologies Active: ${activeFeatures.join(' • ')}`);
-      await new Promise((r) => setTimeout(r, 500));
-    }
-  }
-
-  if (researchResult?.features?.requiresDataTables || researchResult?.features?.requiresDiagramSpecs) {
-    if (onProgress) onProgress(`Mandating Graphics/Data Standards: Explicit Data Tables, Circuit values & Piecewise coordinates...`);
-    await new Promise((r) => setTimeout(r, 500));
-  }
-
-  if (onProgress) onProgress(`Anti-Duplication Filter: Active (scanning past candidate tests for zero duplicate questions)...`);
-  await new Promise((r) => setTimeout(r, 500));
-
-  if (onProgress) onProgress(`Synthesizing 100% authentic standardized paper with exact official sections...`);
-  await new Promise((r) => setTimeout(r, 400));
-
-  return researchResult;
+// Deprecated stub for backwards compatibility (live web research removed)
+export async function performLiveWebResearch() {
+  return null;
 }
 
-// Stage 2: Real Standardized Question Paper Generation Strictly Based on Discovered Blueprint
+// Standardized Question Paper Generation
 export async function generateExamPaper({
   topic,
   profile,
   questionCount = 20,
   difficulty = 'Standard',
-  researchData = null,
   country = null,
   questionStyle = 'mixed',
 }) {
@@ -232,13 +87,12 @@ export async function generateExamPaper({
         profile,
         questionCount,
         difficulty,
-        researchData,
         pastQuestions,
         country,
         questionStyle
       );
-      if (paper && paper.sections && paper.sections.length >= 2) {
-        const allNewQuestions = paper.sections.flatMap((s) => s.questions);
+      if (paper && paper.sections && paper.sections.length >= 1) {
+        const allNewQuestions = paper.sections.flatMap((s) => s.questions || []);
         saveQuestionHistory(topic, allNewQuestions);
         return paper;
       }
@@ -267,44 +121,20 @@ async function callGeminiAPIWithModel(
   modelName,
   topic,
   profile,
-  questionCount,
-  difficulty,
-  researchData,
-  pastQuestions,
+  questionCount = 20,
+  difficulty = 'Standard',
+  pastQuestions = [],
   countryParam = null,
   questionStyle = 'mixed'
 ) {
-  const exam = profile.targetExam || 'National Board Examination';
-  const grade = profile.grade || 'Secondary Level';
+  const exam = profile?.targetExam || 'National Board Examination';
+  const grade = profile?.grade || 'Secondary Level';
+  const stream = profile?.stream || 'General';
   const selectedCountryCode = countryParam || profile?.country || 'in';
   const countryObj = COUNTRIES.find((c) => c.id === selectedCountryCode);
-  const country = countryObj ? countryObj.name : (profile.countryName || profile.country || 'Global');
-  const detectedSubject = researchData?.detectedSubject || (topic.toLowerCase().includes('thief') || topic.toLowerCase().includes('letter to god') ? 'English Language & Literature' : 'General Curriculum');
-  const subjectCode = researchData?.subjectCode || '';
-  const maxMarks = researchData?.officialMaxMarks || 100;
-  const timeAllowed = researchData?.officialTime || '3 Hours';
-  const boardName = researchData?.officialBoard || `${exam} Directorate`;
-  const calculatorPolicy = researchData?.calculatorPolicy || 'Follow standard examination calculator regulations.';
-  const requiresTables = researchData?.requiresDataTables ?? false;
-  const requiresGraphs = researchData?.requiresGraphDescriptions ?? false;
+  const country = countryObj ? countryObj.name : (profile?.countryName || profile?.country || 'Global');
 
   const styleDirective = getQuestionStyleDirective(questionStyle, selectedCountryCode);
-
-  // Dynamic blueprint sections from live research
-  let sectionsBlueprintDescription = '';
-  if (researchData?.officialSections && researchData.officialSections.length > 0) {
-    sectionsBlueprintDescription = researchData.officialSections
-      .map(
-        (s) =>
-          `- ${s.sectionCode}: "${s.officialName}" [Format: ${s.questionType.toUpperCase()}, ${s.marksPerQuestion} mark(s) per question, Negative Marking: ${s.negativeMarking || 'None'}${s.calculatorAllowed !== undefined ? (s.calculatorAllowed ? ', Calculator Permitted' : ', No Calculator') : ''}] -> Target: ${s.count || 4} authentic questions.`
-      )
-      .join('\n');
-  } else {
-    sectionsBlueprintDescription = `
-- SECTION A: Objective / Multiple Choice Questions
-- SECTION B: Short Answer Questions
-- SECTION C: Analytical / Free-Response / Long Questions`;
-  }
 
   // Anti-duplication exclusion list
   let exclusionClause = '';
@@ -318,106 +148,85 @@ ${pastSample}
 CRITICAL: DO NOT repeat any of the above questions, question stems, or options! You MUST generate 100% NEW, FRESH, and UNEXPLORED questions covering different angles of "${topic}".`;
   }
 
-  // Dynamic example sections JSON based on research
-  const dynamicSections = (researchData?.officialSections && researchData.officialSections.length > 0)
-    ? researchData.officialSections.map((sec, idx) => ({
-        name: sec.sectionCode,
-        description: sec.officialName,
-        passage: (sec.questionType === 'case' || sec.questionType === 'reading') ? 'Full text passage or case scenario (200-350 words)...' : null,
-        questions: [
-          sec.questionType === 'mcq'
-            ? {
-                id: `q_${idx + 1}`,
-                questionNumber: idx + 1,
-                marks: sec.marksPerQuestion || 1,
-                type: 'mcq',
-                text: 'Authentic exam question text...',
-                options: ['A) Option 1', 'B) Option 2', 'C) Option 3', 'D) Option 4'],
-                correctAnswer: 'A',
-                explanation: 'Detailed step-by-step derivation',
-                stepMarkingScheme: ['Accurate option identified: +1 Mark']
-              }
-            : sec.questionType === 'numerical'
-            ? {
-                id: `q_${idx + 1}`,
-                questionNumber: idx + 1,
-                marks: sec.marksPerQuestion || 4,
-                type: 'numerical',
-                text: 'Calculate the value of ... (enter integer or decimal numerical value).',
-                options: [],
-                correctAnswer: 'Exact numerical value (e.g. 15)',
-                explanation: 'Complete mathematical / physical working',
-                stepMarkingScheme: ['Formula substitution: 2 Marks', 'Calculated result: 2 Marks']
-              }
-            : {
-                id: `q_${idx + 1}`,
-                questionNumber: idx + 1,
-                marks: sec.marksPerQuestion || 5,
-                type: sec.questionType || 'subjective',
-                text: 'Multi-part problem: (a) ... (b) ... (c) ...',
-                correctAnswer: 'Complete model solution with full working and justifications',
-                explanation: 'Rubric criteria',
-                stepMarkingScheme: ['(a) Concept setup: 2 Marks', '(b) Analytical evaluation: 2 Marks', '(c) Final justification: 1 Mark']
-              }
-        ]
-      }))
-    : [
-        {
-          name: 'SECTION A',
-          description: 'Objective Questions',
-          passage: null,
-          questions: [
-            {
-              id: 'q_1',
-              questionNumber: 1,
-              marks: 1,
-              type: 'mcq',
-              text: 'Authentic multiple-choice question',
-              options: ['A) ...', 'B) ...', 'C) ...', 'D) ...'],
-              correctAnswer: 'A',
-              explanation: 'Step-by-step explanation',
-              stepMarkingScheme: ['Accurate option identified: +1 Mark']
-            }
-          ]
-        }
-      ];
-
-  const prompt = `You are an Examination Paper Creator for ${exam} (${country}, Grade: ${grade}).
-Create an examination paper for:
-- Topic: "${topic}"
-- Subject: ${detectedSubject} ${subjectCode ? `(${subjectCode})` : ''}
-- Board: ${boardName}
-- Maximum Marks: ${maxMarks}
-- Time Allowed: ${timeAllowed}
-${calculatorPolicy ? `- Calculator Policy: ${calculatorPolicy}` : ''}
-${styleDirective ? `- Format: ${styleDirective}` : ''}
+  const prompt = `You are a Senior Academic Examiner and Paper Setter for ${exam} (${country}, Level: ${grade}, Stream: ${stream}).
+Design an authentic, comprehensive examination paper for:
+- Subject Topic / Chapter: "${topic}"
+- Target Level: ${grade} (${exam})
+- Stream: ${stream}
+- Total Questions: ${questionCount}
+- Difficulty Level: ${difficulty}
+${styleDirective ? `- Requested Typology: ${styleDirective}` : ''}
 ${exclusionClause}
 
-${sectionsBlueprintDescription ? `Sections:\n${sectionsBlueprintDescription}` : ''}
+REQUIREMENTS:
+1. Identify the authentic official administering board/authority (e.g., CBSE, NTA, College Board, Cambridge CAIE, IB Organization, CISCE, etc.) and real subject name for this exam.
+2. Structure the paper with realistic, balanced sections (e.g. Section A: Objective / Multiple Choice, Section B: Short Answer / Conceptual, Section C: Analytical / Problem-Solving / Long Answer).
+3. Distribute approximately ${questionCount} total questions across sections logically.
+4. Every question must have:
+   - "id": "q_1", "q_2", etc.
+   - "questionNumber": 1, 2, ...
+   - "marks": positive integer marks (e.g., 1 for MCQ, 2-3 for Short Answer, 4-5 for Long Answer)
+   - "type": "mcq" | "numerical" | "subjective"
+   - "text": clear, academic question text
+   - "options": array of 4 options for mcq (e.g. ["A) ...", "B) ...", "C) ...", "D) ..."]), empty array [] for non-mcq
+   - "correctAnswer": correct option or model solution
+   - "explanation": step-by-step reasoning or mathematical working
+   - "stepMarkingScheme": array of rubric criteria awarding marks step by step
+5. Provide authentic general instructions and realistic time allowed.
 
-Format response ONLY as valid JSON matching this schema:
+Return ONLY valid JSON matching this exact structure:
 {
   "title": "${exam.toUpperCase()} EXAMINATION",
-  "board": "${boardName}",
-  "subject": "${detectedSubject.toUpperCase()} ${subjectCode ? `(${subjectCode})` : ''}",
+  "board": "Official Administering Authority",
+  "subject": "Authentic Subject Name",
   "topic": "${topic}",
   "paperCode": "EXAM-SET-${Math.floor(100 + Math.random() * 900)}",
-  "timeAllowed": "${timeAllowed}",
-  "maxMarks": ${maxMarks},
-  "calculatorPolicy": "${calculatorPolicy}",
-  "researchHighlights": {
-    "detectedSubject": "${detectedSubject}",
-    "subjectCode": "${subjectCode}",
-    "syllabusSource": "${researchData?.syllabusSource || 'Official Curriculum'}",
-    "officialMarks": ${maxMarks},
-    "officialTime": "${timeAllowed}",
-    "negativeMarking": "${researchData?.negativeMarking || 'None'}"
-  },
+  "timeAllowed": "${questionCount <= 15 ? '1 Hour 30 Mins' : questionCount <= 20 ? '2 Hours' : '3 Hours'}",
+  "maxMarks": 100,
+  "calculatorPolicy": "Standard examination calculator regulations apply.",
   "generalInstructions": [
-    "Read all instructions carefully before answering.",
-    "All questions are compulsory."
+    "Read all questions carefully before attempting.",
+    "All questions are compulsory unless internal choice is provided.",
+    "Show complete steps and working for numerical and derivation questions."
   ],
-  "sections": ${JSON.stringify(dynamicSections, null, 2)}
+  "sections": [
+    {
+      "name": "SECTION A",
+      "description": "Objective / Multiple Choice Questions",
+      "passage": null,
+      "questions": [
+        {
+          "id": "q_1",
+          "questionNumber": 1,
+          "marks": 1,
+          "type": "mcq",
+          "text": "Question text...",
+          "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
+          "correctAnswer": "A",
+          "explanation": "Detailed step-by-step explanation...",
+          "stepMarkingScheme": ["Accurate option identified: +1 Mark"]
+        }
+      ]
+    },
+    {
+      "name": "SECTION B",
+      "description": "Short Answer & Conceptual Questions",
+      "passage": null,
+      "questions": [
+        {
+          "id": "q_2",
+          "questionNumber": 2,
+          "marks": 3,
+          "type": "subjective",
+          "text": "Question text...",
+          "options": [],
+          "correctAnswer": "Model solution...",
+          "explanation": "Marking rubric...",
+          "stepMarkingScheme": ["Concept setup: 1.5 Marks", "Final conclusion: 1.5 Marks"]
+        }
+      ]
+    }
+  ]
 }`;
 
   const apiKey = getApiKey();

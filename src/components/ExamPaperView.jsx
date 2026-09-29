@@ -187,15 +187,6 @@ export default function ExamPaperView({ paper, onEvaluate, onReset }) {
 
       {/* Main Examination Sheet */}
       <div style={styles.paperCard}>
-        {/* Research Verification Bar */}
-        {paper.researchHighlights && (
-          <div style={styles.researchPillBar}>
-            <Sparkles size={14} color="#2563eb" />
-            <span>
-              Official Blueprint Grounded: <strong>{paper.studentProfile?.targetExam || paper.title || 'Exam'}</strong> • {paper.board || 'Authority'} • {paper.researchHighlights.detectedSubject || paper.subject || 'Subject'} • {paper.researchHighlights.negativeMarking && paper.researchHighlights.negativeMarking !== 'None' ? paper.researchHighlights.negativeMarking : 'Standard Marking'} • Anti-Duplication Active (0 Duplicates)
-            </span>
-          </div>
-        )}
 
         {/* Roll No & Code Bar */}
         <div style={styles.paperMetaBar}>
