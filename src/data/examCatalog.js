@@ -1,227 +1,210 @@
-// Global Examination & Curriculum Database
+// Official College Board AP Calculus Database & Curriculum Specification
+// Exclusively configured for AP Calculus AB & AP Calculus BC
+
+export const AP_SUBJECTS = [
+  {
+    id: 'ap_calc_ab',
+    name: 'AP Calculus AB',
+    shortName: 'Calculus AB',
+    code: 'AP-CALC-AB',
+    level: 'College Calculus I Equivalent',
+    authority: 'The College Board (Advanced Placement Program)',
+    badge: 'College Board Official',
+    description: 'Covers differential and integral calculus: limits, derivatives, contextual applications, definite integrals, Fundamental Theorem of Calculus, separable differential equations, and area/volume applications (Units 1–8).',
+    totalUnits: 8,
+    examStructure: {
+      mcqCount: 45,
+      frqCount: 6,
+      maxMarks: 108,
+      duration: '3 Hours 15 Minutes',
+    }
+  },
+  {
+    id: 'ap_calc_bc',
+    name: 'AP Calculus BC',
+    shortName: 'Calculus BC',
+    code: 'AP-CALC-BC',
+    level: 'College Calculus I & II Equivalent',
+    authority: 'The College Board (Advanced Placement Program)',
+    badge: 'College Board Official',
+    description: 'Includes all AP Calculus AB topics PLUS parametric equations, polar coordinates, vector-valued functions, Euler\'s method, logistic differential equations, advanced integration techniques, and infinite sequences and series (Units 1–10).',
+    totalUnits: 10,
+    examStructure: {
+      mcqCount: 45,
+      frqCount: 6,
+      maxMarks: 108,
+      duration: '3 Hours 15 Minutes',
+    }
+  },
+];
+
+// STRICTLY TWO QUESTION TYPES AS REQUIRED
+export const QUESTION_TYPES = [
+  {
+    id: 'mcq',
+    label: 'Multiple Choice (MCQ)',
+    shortLabel: 'MCQ',
+    badge: 'Section I • 4 Options (A–D)',
+    desc: 'Authentic 4-choice questions (A, B, C, D) evaluating conceptual understanding, graphical interpretation, tabular analysis, and multi-step analytical calculation with authentic College Board distractor traps.',
+    defaultCount: 15,
+    countOptions: [5, 10, 15, 20],
+  },
+  {
+    id: 'frq',
+    label: 'Free Response (FRQ)',
+    shortLabel: 'FRQ',
+    badge: 'Section II • 9 Points / Question',
+    desc: 'Authentic multi-part questions (parts a, b, c, d) worth 9 points each with official College Board step-by-step scoring guidelines, point breakdowns, and justification requirements.',
+    defaultCount: 2,
+    countOptions: [1, 2, 3, 4],
+  },
+];
+
+// Official College Board Course & Exam Description (CED) Units for AP Calculus AB
+export const UNITS_AB = [
+  {
+    id: 'unit_1',
+    unitNumber: 1,
+    title: 'Unit 1: Limits & Continuity',
+    subtitle: 'Limits at finite values, limits at infinity, squeeze theorem, and Intermediate Value Theorem (IVT)',
+    topics: ['Limits from graphs & tables', 'Algebraic limits & indeterminate forms', 'One-sided limits & vertical asymptotes', 'Continuity & Intermediate Value Theorem (IVT)'],
+  },
+  {
+    id: 'unit_2',
+    unitNumber: 2,
+    title: 'Unit 2: Differentiation: Definition & Fundamental Rules',
+    subtitle: 'Limit definition of derivative, power, product, quotient, and trigonometric derivatives',
+    topics: ['Derivative as limit of difference quotient', 'Power, sum, constant multiple rules', 'Trigonometric & exponential derivatives', 'Product Rule & Quotient Rule'],
+  },
+  {
+    id: 'unit_3',
+    unitNumber: 3,
+    title: 'Unit 3: Composite, Implicit & Inverse Functions',
+    subtitle: 'Chain rule, implicit differentiation, and inverse trigonometric derivatives',
+    topics: ['Chain Rule for composite functions', 'Implicit differentiation & normal lines', 'Derivatives of inverse functions', 'Inverse trigonometric derivatives (arcsin, arctan)'],
+  },
+  {
+    id: 'unit_4',
+    unitNumber: 4,
+    title: 'Unit 4: Contextual Applications of Differentiation',
+    subtitle: 'Straight-line motion, related rates, local linearity, and L\'Hôpital\'s Rule',
+    topics: ['Rectilinear particle motion (position, velocity, acceleration, speed)', 'Related Rates (geometric rates of change)', 'Tangent line approximations & local linearity', 'L\'Hôpital\'s Rule for 0/0 and ∞/∞'],
+  },
+  {
+    id: 'unit_5',
+    unitNumber: 5,
+    title: 'Unit 5: Analytical Applications of Differentiation',
+    subtitle: 'Mean Value Theorem (MVT), Extreme Value Theorem (EVT), concavity, and optimization',
+    topics: ['Mean Value Theorem (MVT) & Rolle\'s Theorem', 'First & Second Derivative Tests for relative extrema', 'Concavity & points of inflection', 'Global extrema (Candidates Test) & Optimization problems'],
+  },
+  {
+    id: 'unit_6',
+    unitNumber: 6,
+    title: 'Unit 6: Integration & Accumulation of Change',
+    subtitle: 'Riemann sums, Fundamental Theorem of Calculus (FTC), and U-substitution',
+    topics: ['Definite integral as accumulation & Riemann sums', 'Fundamental Theorem of Calculus Parts 1 & 2', 'Integration by substitution (U-sub with limit change)', 'Accumulation functions g(x) = ∫ f(t)dt'],
+  },
+  {
+    id: 'unit_7',
+    unitNumber: 7,
+    title: 'Unit 7: Differential Equations',
+    subtitle: 'Slope fields, exponential growth/decay, and separable differential equations',
+    topics: ['Slope fields & solution curve trajectories', 'Separation of variables with initial conditions', 'Exponential growth & decay models dy/dt = ky', 'Domain restrictions on particular solutions'],
+  },
+  {
+    id: 'unit_8',
+    unitNumber: 8,
+    title: 'Unit 8: Applications of Integration',
+    subtitle: 'Average value, area between curves, volumes of solids (cross-sections, disk, washer)',
+    topics: ['Average value of a function on [a, b]', 'Area between curves f(x) and g(x)', 'Volumes with known cross-sections (squares, semicircles, triangles)', 'Volumes of revolution (Disk Method & Washer Method)'],
+  },
+  {
+    id: 'full_mock_ab',
+    unitNumber: 'MOCK',
+    title: 'Full-Syllabus AP Calculus AB Mock Exam',
+    subtitle: 'Comprehensive multi-unit practice paper aligned to official College Board standards',
+    topics: ['All Units 1–8 balanced distribution', 'High-yield FRQ archetypes', 'Mix of Calculator-Active and No-Calculator problems'],
+  },
+];
+
+// Official College Board Course & Exam Description (CED) Units for AP Calculus BC
+export const UNITS_BC = [
+  ...UNITS_AB.filter((u) => u.id !== 'full_mock_ab'),
+  {
+    id: 'unit_bc_advanced_integration',
+    unitNumber: '6 (BC)',
+    title: 'Unit 6 (BC Addition): Advanced Integration Techniques',
+    subtitle: 'Integration by parts, partial fractions, and improper integrals',
+    topics: ['Integration by parts (LIATE & Tabular Method)', 'Integration by linear partial fractions', 'Improper integrals with infinite limits', 'Improper integrals with discontinuous integrands'],
+  },
+  {
+    id: 'unit_bc_advanced_de',
+    unitNumber: '7 (BC)',
+    title: 'Unit 7 (BC Addition): Euler\'s Method & Logistic Differential Equations',
+    subtitle: 'Numerical approximations using Euler\'s steps and logistic population models',
+    topics: ['Euler\'s Method with step size Δx = h', 'Logistic differential equation dP/dt = kP(1 - P/M)', 'Carrying capacity M and inflection at M/2', 'Limits of logistic solutions as t → ∞'],
+  },
+  {
+    id: 'unit_9',
+    unitNumber: 9,
+    title: 'Unit 9: Parametric Equations, Polar Coordinates & Vector-Valued Functions',
+    subtitle: 'Planar motion, vector velocity/speed, parametric arc length, and polar area',
+    topics: ['Parametric derivatives dy/dx and d²y/dx²', 'Planar vector motion: velocity, speed, acceleration, and total distance', 'Parametric arc length ∫√((x\')² + (y\')²) dt', 'Polar slope dy/dx and polar area A = 1/2 ∫ r² dθ'],
+  },
+  {
+    id: 'unit_10',
+    unitNumber: 10,
+    title: 'Unit 10: Infinite Sequences & Series',
+    subtitle: 'Convergence tests, Taylor & Maclaurin series, radius/interval of convergence, and error bounds',
+    topics: ['Convergence tests (Geometric, p-Series, Integral, Comparison, Alternating, Ratio)', 'Alternating Series Error Bound |S - S_N| ≤ b_{N+1}', 'Taylor & Maclaurin polynomials & Series (eˣ, sin x, cos x, 1/(1-x))', 'Radius & interval of convergence (testing endpoints)', 'Lagrange Error Bound (Taylor\'s remainder formula)'],
+  },
+  {
+    id: 'full_mock_bc',
+    unitNumber: 'MOCK',
+    title: 'Full-Syllabus AP Calculus BC Mock Exam',
+    subtitle: 'Comprehensive multi-unit practice paper covering both AB subscore and BC specialty topics',
+    topics: ['All Units 1–10 comprehensive mock', 'Series FRQ (Question 6 archetype)', 'Parametric/Polar/Vector motion problem', 'Mix of Calculator-Active and No-Calculator problems'],
+  },
+];
+
+// Popular quick-selection topics
+export const POPULAR_CALC_TOPICS = {
+  ap_calc_ab: [
+    'Unit 4: Related Rates & Particle Motion',
+    'Unit 5: Mean Value Theorem & Optimization',
+    'Unit 6: Fundamental Theorem of Calculus & Accumulation',
+    'Unit 7: Differential Equations & Separation of Variables',
+    'Unit 8: Area between Curves & Washer Volume',
+    'Full-Syllabus AP Calculus AB Mock Exam',
+  ],
+  ap_calc_bc: [
+    'Unit 9: Parametric & Vector Motion (Speed & Arc Length)',
+    'Unit 9: Polar Curves & Area (A = 1/2 ∫ r² dθ)',
+    'Unit 10: Taylor & Maclaurin Series (eˣ, sin x, cos x, 1/(1-x))',
+    'Unit 10: Ratio Test & Interval of Convergence',
+    'Unit 10: Alternating Series & Lagrange Error Bound',
+    'Unit 7 (BC): Euler\'s Method & Logistic Differential Equations',
+    'Unit 6 (BC): Integration by Parts & Improper Integrals',
+    'Full-Syllabus AP Calculus BC Mock Exam',
+  ],
+};
+
+// Backward-compatibility exports
 export const COUNTRIES = [
-  { id: 'in', name: 'India', flag: '🇮🇳', currency: '₹' },
-  { id: 'jp', name: 'Japan', flag: '🇯🇵', currency: '¥' },
-  { id: 'us', name: 'United States', flag: '🇺🇸', currency: '$' },
-  { id: 'uk', name: 'United Kingdom', flag: '🇬🇧', currency: '£' },
-  { id: 'fr', name: 'France', flag: '🇫🇷', currency: '€' },
-  { id: 'de', name: 'Germany', flag: '🇩🇪', currency: '€' },
-  { id: 'ca', name: 'Canada', flag: '🇨🇦', currency: '$' },
-  { id: 'au', name: 'Australia', flag: '🇦🇺', currency: '$' },
-  { id: 'ae', name: 'UAE & Middle East', flag: '🇦🇪', currency: 'AED' },
-  { id: 'global', name: 'International / IB', flag: '🌐', currency: '$' },
+  { id: 'us', name: 'United States (College Board)', flag: '🇺🇸', currency: '$' },
 ];
 
 export const GRADES_BY_COUNTRY = {
-  in: ['Class 9', 'Class 10 (Secondary)', 'Class 11', 'Class 12 (Sr. Secondary)', 'Repeater / Dropper', 'College / University'],
-  jp: ['Grade 9 (Junior High 3)', 'Grade 10 (High School 1)', 'Grade 11 (High School 2)', 'Grade 12 (High School 3 / Ronin)', 'University'],
-  us: ['Grade 9 (Freshman)', 'Grade 10 (Sophomore)', 'Grade 11 (Junior)', 'Grade 12 (Senior)', 'Undergraduate'],
-  uk: ['Year 9', 'Year 10-11 (GCSE)', 'Year 12 (AS-Level)', 'Year 13 (A-Level)', 'University'],
-  fr: ['Troisième (Grade 9)', 'Seconde (Grade 10)', 'Première (Grade 11)', 'Terminale (Grade 12 / Bac)', 'CPGE / Université'],
-  de: ['Klasse 9-10 (Sekundarstufe I)', 'Einführungsphase (Klasse 11)', 'Qualifikationsphase Q1/Q2 (Klasse 12-13 / Abitur)', 'Universität'],
-  ca: ['Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 'College / University'],
-  au: ['Year 9-10', 'Year 11 (Preliminary)', 'Year 12 (HSC / VCE / QCE)', 'University'],
-  ae: ['Grade 9-10 (CBSE/British)', 'Grade 11-12 (CBSE/British)', 'University Prep'],
-  global: ['Middle Years (MYP)', 'IB Diploma Year 1 (DP1)', 'IB Diploma Year 2 (DP2)', 'IGCSE / AS / A2'],
+  us: ['AP Calculus Student (High School)', 'AP Calculus Exam Candidate'],
 };
 
 export const STREAMS = [
-  { id: 'science_pcm', name: 'Science (Physics, Chemistry, Math)' },
-  { id: 'science_pcb', name: 'Science (Physics, Chemistry, Biology)' },
-  { id: 'commerce_math', name: 'Commerce with Mathematics / Economics' },
-  { id: 'commerce', name: 'Commerce & Business Studies' },
-  { id: 'humanities', name: 'Arts & Humanities (History, Pol Sci, Geo)' },
-  { id: 'engineering', name: 'Engineering & Applied Sciences' },
-  { id: 'medical', name: 'Pre-Medical & Life Sciences' },
-  { id: 'general', name: 'General Aptitude & Reasoning' },
+  { id: 'ap_math', name: 'Advanced Placement Mathematics (Calculus)' },
 ];
 
 export const TARGET_EXAMS_BY_COUNTRY = {
-  in: [
-    { id: 'cbse_12', name: 'CBSE Board (Class 12)', authority: 'Central Board of Secondary Education' },
-    { id: 'cbse_10', name: 'CBSE Board (Class 10)', authority: 'Central Board of Secondary Education' },
-    { id: 'jee_main', name: 'JEE Main (Engineering)', authority: 'National Testing Agency (NTA)' },
-    { id: 'jee_adv', name: 'JEE Advanced', authority: 'IIT Joint Admission Board' },
-    { id: 'neet_ug', name: 'NEET-UG (Medical)', authority: 'National Testing Agency (NTA)' },
-    { id: 'icse_isc', name: 'ICSE / ISC Board', authority: 'CISCE' },
-    { id: 'cuet_ug', name: 'CUET-UG (University Entrance)', authority: 'NTA' },
-    { id: 'nda_na', name: 'NDA & NA (Defence Entrance)', authority: 'Union Public Service Commission (UPSC)' },
-    { id: 'clat', name: 'CLAT (Common Law Admission Test)', authority: 'Consortium of National Law Universities' },
-    { id: 'gate', name: 'GATE (Engineering & Sciences)', authority: 'IISc & IITs' },
-    { id: 'upsc_pre', name: 'UPSC Civil Services (Prelims)', authority: 'Union Public Service Commission' },
-    { id: 'state_board', name: 'State Board Higher Secondary (HSC/Inter)', authority: 'State Education Boards' },
-  ],
-  jp: [
-    { id: 'jp_kyotsu', name: 'Common Test for University Admissions (Kyōtsū Test)', authority: 'National Center for University Entrance Examinations' },
-    { id: 'jp_daigaku', name: 'National University Entrance Exams (Tokyo/Kyoto Daigaku)', authority: 'Imperial University Admissions Board' },
-    { id: 'jp_koukou', name: 'Senior High School Entrance (Koukou Nyūshi)', authority: 'Prefectural Boards of Education' },
-  ],
   us: [
-    { id: 'sat_digital', name: 'Digital SAT (Math & Reading)', authority: 'College Board' },
-    { id: 'act', name: 'ACT (Composite)', authority: 'ACT Inc.' },
-    { id: 'ap_calc', name: 'AP Calculus AB / BC', authority: 'College Board' },
-    { id: 'ap_phys', name: 'AP Physics 1 / C', authority: 'College Board' },
-    { id: 'ap_chem', name: 'AP Chemistry', authority: 'College Board' },
-    { id: 'ap_bio', name: 'AP Biology', authority: 'College Board' },
-    { id: 'ap_eng', name: 'AP English Literature & Composition', authority: 'College Board' },
-    { id: 'mcat', name: 'MCAT (Medical College Admission Test)', authority: 'Association of American Medical Colleges (AAMC)' },
-    { id: 'lsat', name: 'LSAT (Law School Admission Test)', authority: 'Law School Admission Council (LSAC)' },
-    { id: 'gre', name: 'GRE General Test', authority: 'Educational Testing Service (ETS)' },
-    { id: 'ged', name: 'GED (High School Equivalency)', authority: 'GED Testing Service' },
-  ],
-  uk: [
-    { id: 'a_levels_stem', name: 'A-Levels (Math, Physics, Chemistry)', authority: 'Edexcel / AQA / OCR' },
-    { id: 'gcse_sciences', name: 'GCSE Combined / Triple Science', authority: 'AQA / Edexcel' },
-    { id: 'gcse_math', name: 'GCSE Mathematics (Higher Tier)', authority: 'Edexcel' },
-    { id: 'gcse_english', name: 'GCSE English Language & Literature', authority: 'AQA / Edexcel' },
-    { id: 'a_levels_econ', name: 'A-Levels (Economics & Business)', authority: 'OCR / Edexcel' },
-    { id: 'ucat', name: 'UCAT (University Clinical Aptitude Test)', authority: 'UCAT Consortium' },
-    { id: 'step_mat', name: 'STEP / MAT (Oxford & Cambridge Mathematics)', authority: 'Cambridge Assessment Admissions Testing' },
-    { id: 'scottish_highers', name: 'Scottish Highers / Advanced Highers', authority: 'Scottish Qualifications Authority (SQA)' },
-  ],
-  fr: [
-    { id: 'fr_bac_general', name: 'Le Baccalauréat Général (Philo & Spécialités)', authority: 'Ministère de l\'Éducation Nationale' },
-    { id: 'fr_grand_oral', name: 'Le Grand Oral & Dissertation', authority: 'Académie de Paris' },
-    { id: 'fr_prepa', name: 'Classes Préparatoires (CPGE Concours)', authority: 'Grandes Écoles' },
-  ],
-  de: [
-    { id: 'de_abitur', name: 'Abitur (Gymnasiale Oberstufe)', authority: 'Kultusministerkonferenz (KMK)' },
-    { id: 'de_realschule', name: 'Mittlerer Schulabschluss (MSA / Realschule)', authority: 'Landesregierungen' },
-  ],
-  ca: [
-    { id: 'ontario_gr12', name: 'Ontario Grade 12 (OSSD U-level STEM)', authority: 'Ministry of Education Ontario' },
-    { id: 'bc_provincial', name: 'BC Grade 12 Graduation Exams', authority: 'BC Ministry of Education' },
-    { id: 'alberta_diploma', name: 'Alberta Diploma Examinations', authority: 'Alberta Education' },
-    { id: 'quebec_cegep', name: 'Quebec CEGEP Ministerial Examinations', authority: 'Ministère de l\'Éducation du Québec' },
-    { id: 'casper_ca', name: 'CASPer / MCAT Canada (Medical Entrance)', authority: 'Acrobatiq / AAMC' },
-  ],
-  au: [
-    { id: 'hsc_nsw', name: 'HSC (New South Wales)', authority: 'NESA' },
-    { id: 'vce_vic', name: 'VCE (Victoria)', authority: 'VCAA' },
-    { id: 'qce_qld', name: 'QCE (Queensland Certificate of Education)', authority: 'QCAA' },
-    { id: 'wace_wa', name: 'WACE (Western Australia)', authority: 'SCSA' },
-    { id: 'sace_sa', name: 'SACE (South Australian Certificate)', authority: 'SACE Board' },
-    { id: 'ucat_anz', name: 'UCAT ANZ / GAMSAT (Medical Admissions)', authority: 'UCAT ANZ Consortium & ACER' },
-  ],
-  ae: [
-    { id: 'uae_emsat', name: 'EmSAT Achieve (National Standardized Test)', authority: 'UAE Ministry of Education' },
-    { id: 'uae_cbse', name: 'Gulf CBSE Board Center', authority: 'CBSE Gulf Sahodaya' },
-    { id: 'cambridge_me', name: 'Cambridge IGCSE & International A-Levels', authority: 'Cambridge Assessment International (CIE)' },
-    { id: 'thanaweya_amma', name: 'General Secondary Certificate (Thanaweya Amma)', authority: 'Ministry of Education (MoE)' },
-    { id: 'qudurat_tahseeli', name: 'Qudurat & Tahseeli (General Aptitude)', authority: 'ETEC National Center for Assessment' },
-  ],
-  global: [
-    { id: 'ib_dp_hl', name: 'IB Diploma Programme (Higher Level)', authority: 'International Baccalaureate Organization' },
-    { id: 'ib_dp_sl', name: 'IB Diploma Programme (Standard Level)', authority: 'International Baccalaureate Organization' },
-    { id: 'cambridge_cie', name: 'Cambridge Assessment International (CIE)', authority: 'Cambridge University Press' },
-    { id: 'sat_intl', name: 'Digital SAT International', authority: 'College Board' },
-  ],
-};
-
-// Authentic National Exam Question Typologies Map
-export const COUNTRY_QUESTION_STYLES = {
-  in: [
-    { id: 'mixed', label: 'Official CBSE Board Mix', badge: 'Standard Blueprint', desc: 'Standard section distribution: MCQs, Short Answer, Long Answer & Case Studies' },
-    { id: 'in_ar', label: 'Assertion-Reason (A & R)', badge: 'Analytical Reasoning', desc: 'Statements of Assertion & Reason testing underlying conceptual causation' },
-    { id: 'in_case_study', label: 'Case-Based Integrated Studies', badge: 'Competency-Based', desc: 'Real-world data/passage scenario with multi-part questions (Section E)' },
-    { id: 'in_numerical', label: 'Numerical / Integer Value (JEE)', badge: 'Calculation Focus', desc: 'Non-MCQ numerical calculations with exact decimal/integer outputs' },
-    { id: 'in_pure_mcq', label: '100% Pure Objective MCQs', badge: 'Speed & Elimination', desc: 'Pure multiple-choice format with 4 options and single correct answer' },
-  ],
-  jp: [
-    { id: 'jp_kumiawase', label: 'Combination Matrix (Kumiawase)', badge: 'Tokyo Daigaku Benchmark', desc: '3-4 logical statements with 8-option deduction matrix' },
-    { id: 'jp_socratic', label: 'Socratic Dialogue Interpretation', badge: 'Debate Analysis', desc: 'Multi-student debate transcript to identify logical fallacies and premises' },
-    { id: 'jp_algorithm', label: 'Algorithm & Logic Trace Flow', badge: 'Computational Logic', desc: 'Pseudo-code trace and state transition deduction problems' },
-    { id: 'jp_document', label: 'Primary Document Confrontation', badge: 'Source Critique', desc: 'Contradictory historical/scientific records comparison' },
-    { id: 'jp_mixed', label: 'Daigaku University Entrance Mix', badge: 'Composite Exam', desc: 'Standard authentic Japanese entrance exam structure' },
-  ],
-  us: [
-    { id: 'us_evidence', label: 'Two-Part Evidence-Paired (SAT)', badge: 'Digital SAT Standard', desc: 'Part 1: Deductive inference, Part 2: Exact quote/textual proof' },
-    { id: 'us_dbq', label: 'Document-Based Question (DBQ)', badge: 'AP CollegeBoard', desc: 'Synthesizing 6-7 historical/scientific sources into a thesis essay' },
-    { id: 'us_gridin', label: 'Student-Produced Response (Grid-In)', badge: 'Zero Guessing', desc: 'Calculation-only problems requiring direct fraction or decimal entry' },
-    { id: 'us_frq_experimental', label: 'Experimental Design FRQs (AP)', badge: 'Lab Science', desc: 'Laboratory apparatus setup, error analysis, and expected graphs' },
-    { id: 'us_mixed', label: 'Standard AP / SAT Composite Mix', badge: 'Standard Benchmark', desc: 'Standard multiple-choice and free-response synthesis' },
-  ],
-  uk: [
-    { id: 'uk_synoptic', label: 'Synoptic Multi-Module Questions', badge: 'A-Levels Synthesis', desc: 'Cross-module synthesis connecting 3-4 separate chapters into one problem' },
-    { id: 'uk_anomaly', label: 'Data Response & Outlier Evaluation', badge: 'Cambridge Standard', desc: 'Evaluating flawed experimental datasets and anomalous graph points' },
-    { id: 'uk_lor', label: 'Level of Response (LoR) Extended Prose', badge: 'Scientific Rigor', desc: 'Cohesive chain-of-reasoning structured essays evaluated on logical flow' },
-    { id: 'uk_practical', label: 'Practical Endorsement & Uncertainty', badge: 'CPAC Lab Skills', desc: 'Percentage uncertainty, apparatus selection, and error mitigation' },
-    { id: 'uk_mixed', label: 'Standard Cambridge / Edexcel Mix', badge: 'Standard Board', desc: 'Balanced structured exam format across all official modules' },
-  ],
-  fr: [
-    { id: 'fr_dissertation', label: 'Dissertation Philosophique', badge: 'Le Baccalauréat', desc: 'Dialectical 3-stage essay: Thèse, Antithèse, and Synthèse' },
-    { id: 'fr_commentaire', label: 'Commentaire de Texte', badge: 'Literary Exegesis', desc: 'Microscopic dissective analysis of author syntax, tone, and metaphor' },
-    { id: 'fr_grand_oral', label: 'Grand Oral Defense Scenarios', badge: 'Oral Inquiry', desc: 'Interdisciplinary research questions designed for live defense' },
-    { id: 'fr_mixed', label: 'Standard Baccalauréat Structure', badge: 'National Exam', desc: 'Standard French national graduation examination model' },
-  ],
-  de: [
-    { id: 'de_afb3', label: 'AFB-III Operator Tasks (Evaluation)', badge: 'Abitur Oberstufe', desc: 'Action-verb standardized tasks: Beurteilen, Stellung nehmen & Ethics' },
-    { id: 'de_quellenkritik', label: 'Quellenkritik (Source Bias Analysis)', badge: 'Critical History', desc: 'Author agenda, suppressed facts, and historical context critique' },
-    { id: 'de_material', label: 'Materialgestütztes Arbeiten', badge: 'Dossier Analysis', desc: 'Solving real-world challenges using a structured data dossier' },
-    { id: 'de_mixed', label: 'Standard Gymnasiale Oberstufe Mix', badge: 'Standard Tier', desc: 'Balanced AFB I, AFB II, and AFB III tiered distribution' },
-  ],
-  ca: [
-    { id: 'ca_diploma', label: 'Diploma Multiple-Choice & Numerical', badge: 'Provincial Benchmark', desc: 'Standard machine-scored and numerical-response items aligned with provincial curricula' },
-    { id: 'ca_written', label: 'Written-Response & Justification', badge: 'In-Depth STEM', desc: 'Structured multi-part problem solving requiring complete mathematical justifications' },
-    { id: 'ca_inquiry', label: 'Inquiry-Based Lab Investigation', badge: 'Scientific Inquiry', desc: 'Hypothesis testing, controlled variables evaluation, and data conclusion synthesis' },
-    { id: 'ca_mixed', label: 'Canadian Provincial Standard Mix', badge: 'Composite Standard', desc: 'Balanced diploma exam format across multiple-choice and written response' },
-  ],
-  au: [
-    { id: 'au_band6', label: 'HSC Band 6 Extended Response', badge: 'NESA Benchmark', desc: 'High-order analytical synthesis questions evaluated against criteria-based standards' },
-    { id: 'au_vce_data', label: 'VCE Data Analysis & Scenario Critique', badge: 'VCAA STEM', desc: 'Quantitative dataset interpretation with anomaly identification and experimental critique' },
-    { id: 'au_qce', label: 'QCE Problem-Solving & Modeling Task', badge: 'QCAA Standard', desc: 'Mathematical modeling and real-world scenario evaluation with full working' },
-    { id: 'au_mixed', label: 'Australian Senior Secondary Mix (HSC/VCE)', badge: 'National Standard', desc: 'Balanced combination of objective questions and extended free responses' },
-  ],
-  ae: [
-    { id: 'ae_emsat', label: 'EmSAT Achieve Computer-Adaptive Format', badge: 'UAE MoE Standard', desc: 'Standardized adaptive questions across progressive cognitive proficiency tiers' },
-    { id: 'ae_qudurat', label: 'Qudurat & Tahseeli Standardized Aptitude', badge: 'ETEC Standard', desc: 'Speed-based critical logic, spatial reasoning, and quantitative relationships' },
-    { id: 'ae_cambridge_intl', label: 'Cambridge International Assessment', badge: 'CIE Benchmark', desc: 'Structured papers conforming to Gulf CIE / IGCSE examination standards' },
-    { id: 'ae_mixed', label: 'UAE & Gulf Standard Exam Composite', badge: 'Regional Standard', desc: 'Balanced curriculum evaluation model covering theory and application' },
-  ],
-  global: [
-    { id: 'mixed', label: 'Comprehensive Exam Paper (Standard)', badge: 'Universal Standard', desc: 'Balanced distribution of MCQs, Short Answer, and Extended Response' },
-    { id: 'mcq_only', label: '100% Pure Multiple Choice (MCQs)', badge: 'Pure Objective', desc: 'Exclusively single-choice objective questions with four options' },
-    { id: 'subjective_only', label: '100% Pure Subjective / Theory', badge: 'Detailed Written', desc: 'Exclusively descriptive and structured derivation questions' },
-    { id: 'numerical', label: 'Numerical & Problem Solving', badge: 'Quantitative', desc: 'Formula-based calculation problems with step-by-step working' },
-    { id: 'case_study', label: 'Case Study & Scenario Analysis', badge: 'Real World', desc: 'Detailed scenario narrative followed by multi-step analytical questions' },
-  ],
-};
-
-export const POPULAR_TOPICS = {
-  science_pcm: [
-    'Electrostatics & Electric Potential',
-    'Current Electricity & Kirchhoffs Laws',
-    'Thermodynamics & Heat Engines',
-    'Calculus: Derivatives & Integrals',
-    'Organic Chemistry: Aldehydes, Ketones & Carboxylic Acids',
-    'Vectors & 3D Geometry',
-    'Ray & Wave Optics',
-    'Rotational Dynamics & Moment of Inertia',
-  ],
-  science_pcb: [
-    'Genetics & Principle of Inheritance',
-    'Human Physiology & Neural Coordination',
-    'Chemical Bonding & Molecular Structure',
-    'Plant Physiology & Photosynthesis',
-    'Biotechnology: Principles & Processes',
-    'Coordination Compounds',
-  ],
-  commerce_math: [
-    'Macroeconomics: National Income & Multiplier',
-    'Money, Banking & Monetary Policy',
-    'Financial Management & Capital Structure',
-    'Calculus in Business Applications',
-    'Probability & Linear Programming',
-  ],
-  humanities: [
-    'Indian Constitution & Fundamental Rights',
-    'Cold War Era & International Politics',
-    'Modern Indian History (Freedom Struggle)',
-    'Human Geography & Demographics',
-  ],
-  general: [
-    'Quantitative Aptitude & Percentages',
-    'Logical & Critical Reasoning',
-    'Data Interpretation & Probability',
+    { id: 'ap_calc_ab', name: 'AP Calculus AB', authority: 'College Board' },
+    { id: 'ap_calc_bc', name: 'AP Calculus BC', authority: 'College Board' },
   ],
 };

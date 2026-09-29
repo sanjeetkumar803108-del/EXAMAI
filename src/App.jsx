@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
-import ProfileModal from './components/ProfileModal';
 import PaperGenerator from './components/PaperGenerator';
 import ExamPaperView from './components/ExamPaperView';
 import AnswerEvaluationModal from './components/AnswerEvaluationModal';
@@ -35,13 +34,13 @@ function MainApp() {
     }
   });
 
-  // Listen for persistent Firebase auth state (vital for Mobile Google Redirects)
+  // Listen for persistent Firebase auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         const userData = {
           id: firebaseUser.uid,
-          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Candidate',
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'AP Candidate',
           email: firebaseUser.email,
           avatar: firebaseUser.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${firebaseUser.email}`,
           authProvider: 'google',
@@ -58,17 +57,7 @@ function MainApp() {
     return () => unsubscribe();
   }, []);
 
-  // Profile state
-  const [profile, setProfile] = useState(() => {
-    try {
-      const saved = localStorage.getItem('examai_profile');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  // App & Exam Paper states (with safe validation so corrupt cached data never blocks app launch)
+  // App & Exam Paper states
   const [currentPaper, setCurrentPaper] = useState(() => {
     try {
       const saved = localStorage.getItem('examai_last_paper');
@@ -98,14 +87,12 @@ function MainApp() {
 
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Evaluation & Modals
+  // Evaluation & Subscription Modals
   const [evaluationReport, setEvaluationReport] = useState(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
-
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
-  // Usage balance under $2.99 plan (30 tests / month limit)
+  // Usage balance under plan
   const [testsRemaining, setTestsRemaining] = useState(() => {
     const saved = localStorage.getItem('examai_tests_remaining');
     return saved ? parseInt(saved, 10) : 28;
@@ -114,11 +101,7 @@ function MainApp() {
   // Handle Login
   const handleLoginSuccess = (loggedInUser) => {
     setUser(loggedInUser);
-    toast.success(`Welcome to ExamAI, ${loggedInUser.name || 'Candidate'}!`, 'Logged In');
-    const existingProfile = localStorage.getItem('examai_profile');
-    if (!existingProfile) {
-      setShowProfileModal(true);
-    }
+    toast.success(`Welcome to AP Calculus AI, ${loggedInUser.name || 'Candidate'}!`, 'Logged In');
   };
 
   // Handle Logout
@@ -133,21 +116,8 @@ function MainApp() {
     toast.info('You have been signed out successfully.', 'Signed Out');
   };
 
-  // Handle Profile Save
-  const handleProfileSave = (updatedProfile) => {
-    setProfile(updatedProfile);
-    setShowProfileModal(false);
-    toast.success('Your educational profile and target exam have been saved.', 'Profile Saved');
-  };
-
-  // Trigger Sample Paper Generation with Gemini
-  const handleGeneratePaper = async ({ topic, questionCount, difficulty, country, questionStyle }) => {
-    if (!profile) {
-      toast.info('Please configure your target exam and grade first.', 'Profile Required');
-      setShowProfileModal(true);
-      return;
-    }
-
+  // Trigger AP Calculus Paper Generation
+  const handleGeneratePaper = async ({ subject, questionType, topic, questionCount, difficulty }) => {
     if (testsRemaining <= 0) {
       toast.warning('You have reached the monthly test limit. Upgrade to continue.', 'Usage Limit');
       setShowSubscriptionModal(true);
@@ -157,19 +127,12 @@ function MainApp() {
     try {
       setIsGenerating(true);
 
-      const effectiveCountry = country || profile?.country || 'in';
-      const effectiveProfile = {
-        ...profile,
-        country: effectiveCountry,
-      };
-
       const paper = await generateExamPaper({
+        subject,
+        questionType,
         topic,
-        profile: effectiveProfile,
         questionCount,
         difficulty,
-        country: effectiveCountry,
-        questionStyle,
       });
 
       setCurrentPaper(paper);
@@ -182,21 +145,21 @@ function MainApp() {
 
       const totalQ = paper.sections.reduce((acc, s) => acc + (s.questions ? s.questions.length : 0), 0);
       toast.success(
-        `Generated official ${paper.title || 'Exam Paper'} with ${totalQ} questions!`,
-        'Exam Paper Ready'
+        `Generated ${paper.title || 'AP Calculus Paper'} with ${totalQ} ${questionType === 'frq' ? 'Free Response (FRQ)' : 'Multiple Choice (MCQ)'} questions!`,
+        'Paper Ready'
       );
     } catch (err) {
       console.error('Failed to generate paper:', err);
       toast.error(
-        err.message || 'Error generating exam paper. Please try again.',
-        'Paper Generation Issue'
+        err.message || 'Error generating AP Calculus paper. Please try again.',
+        'Generation Issue'
       );
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Trigger Live AI Answer Sheet Evaluation
+  // Trigger Live AI Answer Evaluation with AP Rubrics
   const handleEvaluateAnswers = async (studentAnswers) => {
     if (!currentPaper) return;
 
@@ -204,7 +167,7 @@ function MainApp() {
       setIsEvaluating(true);
       const report = await evaluateStudentAnswers(currentPaper, studentAnswers);
       setEvaluationReport(report);
-      toast.success('Live AI Step-Marking performance report is ready!', 'Evaluation Complete');
+      toast.success('Official AP Reader score report is ready!', 'Evaluation Complete');
     } catch (err) {
       console.error('Evaluation failed:', err);
       toast.error(
@@ -225,8 +188,6 @@ function MainApp() {
     <div style={styles.appWrapper}>
       {/* Top Minimal Navigation */}
       <Navbar
-        profile={profile}
-        onOpenProfile={() => setShowProfileModal(true)}
         onOpenSubscription={() => setShowSubscriptionModal(true)}
         onLogout={handleLogout}
         testsRemaining={testsRemaining}
@@ -245,7 +206,6 @@ function MainApp() {
           </ErrorBoundary>
         ) : (
           <PaperGenerator
-            profile={profile}
             onGenerate={handleGeneratePaper}
             isGenerating={isGenerating}
           />
@@ -257,15 +217,6 @@ function MainApp() {
         <AnswerEvaluationModal
           evaluation={evaluationReport}
           onClose={() => setEvaluationReport(null)}
-        />
-      )}
-
-      {/* Profile Calibration Modal */}
-      {showProfileModal && (
-        <ProfileModal
-          initialProfile={profile}
-          onSave={handleProfileSave}
-          isMandatory={!profile}
         />
       )}
 

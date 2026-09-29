@@ -51,19 +51,11 @@ export default function Navbar({
             </span>
           </button>
 
-          {/* Profile Pill */}
-          <button
-            type="button"
-            onClick={onOpenProfile}
-            style={isMobile ? styles.profilePillMobile : styles.profilePill}
-            title="Edit Educational Profile"
-          >
-            <span style={{ fontSize: '14px', lineHeight: 1 }}>{countryObj.flag}</span>
-            <div style={isMobile ? styles.profileTextMobile : styles.profileText}>
-              <span style={styles.profileExam}>{profile?.targetExam || 'Profile'}</span>
-            </div>
-            {!isMobile && <ChevronRight size={13} color="#94a3b8" />}
-          </button>
+          {/* AP Calculus Specialty Badge */}
+          <div style={isMobile ? styles.apBadgeMobile : styles.apBadge}>
+            <span style={styles.apBadgeDot}></span>
+            <span style={styles.apBadgeText}>AP Calculus Specialist</span>
+          </div>
 
           {/* Logout */}
           <button
@@ -175,45 +167,35 @@ const styles = {
     border: '1px solid #bfdbfe',
     fontWeight: '700',
   },
-  profilePill: {
+  apBadge: {
     display: 'flex',
     alignItems: 'center',
-    gap: '7px',
+    gap: '6px',
     padding: '5px 12px',
-    backgroundColor: '#f8fafc',
-    border: '1px solid #e2e8f0',
+    backgroundColor: '#eff6ff',
+    border: '1px solid #bfdbfe',
     borderRadius: '20px',
-    fontSize: '12px',
-    color: '#1e293b',
   },
-  profilePillMobile: {
+  apBadgeMobile: {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
     padding: '4px 8px',
-    backgroundColor: '#f8fafc',
-    border: '1px solid #e2e8f0',
+    backgroundColor: '#eff6ff',
+    border: '1px solid #bfdbfe',
     borderRadius: '16px',
-    fontSize: '11px',
-    color: '#1e293b',
-    maxWidth: '120px',
   },
-  profileText: {
-    display: 'flex',
-    alignItems: 'center',
-    maxWidth: '160px',
+  apBadgeDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    backgroundColor: '#2563eb',
   },
-  profileTextMobile: {
-    display: 'flex',
-    alignItems: 'center',
-    maxWidth: '80px',
-    overflow: 'hidden',
-  },
-  profileExam: {
-    fontWeight: '600',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+  apBadgeText: {
+    fontSize: '11.5px',
+    fontWeight: '700',
+    color: '#1d4ed8',
+    letterSpacing: '0.2px',
   },
   iconButton: {
     width: '32px',

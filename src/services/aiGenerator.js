@@ -1,4 +1,7 @@
-import { COUNTRIES } from '../data/examCatalog';
+// Official College Board AP Calculus (AB & BC) AI Generator & Examination Engine
+// Strictly configured for AP Calculus AB & AP Calculus BC with MCQ and FRQ support
+
+import { AP_SUBJECTS, QUESTION_TYPES, UNITS_AB, UNITS_BC } from '../data/examCatalog';
 
 export function getApiKey() {
   return (
@@ -9,8 +12,9 @@ export function getApiKey() {
   );
 }
 
-// High-availability models pool (Real v1beta Google Gemini API models)
+// High-availability models pool (Google Gemini v1beta API)
 const ACTIVE_MODELS = [
+  'gemini-2.5-flash',
   'gemini-3.1-flash-lite',
   'gemini-3.1-flash-lite-preview',
   'gemini-3.5-flash-lite',
@@ -25,7 +29,7 @@ export function getQuestionHistory(topic) {
     const raw = localStorage.getItem('examai_question_history');
     if (!raw) return [];
     const map = JSON.parse(raw);
-    const key = topic.trim().toLowerCase();
+    const key = (topic || '').trim().toLowerCase();
     return map[key] || [];
   } catch {
     return [];
@@ -36,73 +40,14 @@ export function saveQuestionHistory(topic, newQuestions) {
   try {
     const raw = localStorage.getItem('examai_question_history');
     const map = raw ? JSON.parse(raw) : {};
-    const key = topic.trim().toLowerCase();
+    const key = (topic || '').trim().toLowerCase();
     const existing = map[key] || [];
-    const questionTexts = newQuestions.map((q) => q.text.trim());
-    map[key] = [...new Set([...existing, ...questionTexts])].slice(-60);
+    const questionTexts = (newQuestions || []).map((q) => (q.text || '').trim()).filter(Boolean);
+    map[key] = [...new Set([...existing, ...questionTexts])].slice(-80);
     localStorage.setItem('examai_question_history', JSON.stringify(map));
   } catch (e) {
     console.warn('Failed to save question history:', e);
   }
-}
-
-// Dedicated Question Style & Typology directives enforcing authentic examination patterns
-// Question Style Directive (clean and open for custom AI training)
-export function getQuestionStyleDirective(styleId, countryCode = 'in') {
-  if (!styleId || styleId === 'mixed') {
-    return '';
-  }
-  return `Question Format: ${styleId}`;
-}
-
-// Deprecated stub for backwards compatibility (live web research removed)
-export async function performLiveWebResearch() {
-  return null;
-}
-
-// Standardized Question Paper Generation
-export async function generateExamPaper({
-  topic,
-  profile,
-  questionCount = 20,
-  difficulty = 'Standard',
-  country = null,
-  questionStyle = 'mixed',
-}) {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error('Gemini API Key missing! Please set VITE_GEMINI_API_KEY in Vercel settings and redeploy.');
-  }
-
-  const pastQuestions = getQuestionHistory(topic);
-  let lastError = null;
-
-  // Try each model in pool until successful
-  for (const model of ACTIVE_MODELS) {
-    try {
-      console.log(`Generating exam paper with model: ${model} [Format: ${questionStyle}, Country: ${country}]...`);
-      const paper = await callGeminiAPIWithModel(
-        model,
-        topic,
-        profile,
-        questionCount,
-        difficulty,
-        pastQuestions,
-        country,
-        questionStyle
-      );
-      if (paper && paper.sections && paper.sections.length >= 1) {
-        const allNewQuestions = paper.sections.flatMap((s) => s.questions || []);
-        saveQuestionHistory(topic, allNewQuestions);
-        return paper;
-      }
-    } catch (err) {
-      lastError = err.message;
-      console.warn(`Model ${model} failed, trying next model:`, err.message);
-    }
-  }
-
-  throw new Error(`Generation failed across all models (${lastError || 'Please check your API key & quota'}).`);
 }
 
 // Helper to sanitize broken math strings and LaTeX slips
@@ -117,24 +62,93 @@ export function sanitizeMathText(text) {
   return str.trim();
 }
 
-async function callGeminiAPIWithModel(
-  modelName,
-  topic,
-  profile,
-  questionCount = 20,
-  difficulty = 'Standard',
-  pastQuestions = [],
-  countryParam = null,
-  questionStyle = 'mixed'
-) {
-  const exam = profile?.targetExam || 'National Board Examination';
-  const grade = profile?.grade || 'Secondary Level';
-  const stream = profile?.stream || 'General';
-  const selectedCountryCode = countryParam || profile?.country || 'in';
-  const countryObj = COUNTRIES.find((c) => c.id === selectedCountryCode);
-  const country = countryObj ? countryObj.name : (profile?.countryName || profile?.country || 'Global');
+// Deprecated stub for backwards compatibility
+export async function performLiveWebResearch() {
+  return null;
+}
 
-  const styleDirective = getQuestionStyleDirective(questionStyle, selectedCountryCode);
+// Main AP Calculus Question Paper Generator (MCQ & FRQ)
+export async function generateExamPaper({
+  subject = 'ap_calc_ab',
+  questionType = 'mcq',
+  topic = 'Limits & Continuity',
+  questionCount,
+  difficulty = 'Standard',
+  profile,
+  questionStyle,
+}) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('Gemini API Key missing! Please set VITE_GEMINI_API_KEY in environment or localStorage.');
+  }
+
+  // Resolve effective subject: AP Calculus AB or AP Calculus BC
+  let effectiveSubject = subject || 'ap_calc_ab';
+  if (profile?.targetExam && profile.targetExam.toLowerCase().includes('bc')) {
+    effectiveSubject = 'ap_calc_bc';
+  } else if (profile?.targetExam && profile.targetExam.toLowerCase().includes('ab')) {
+    effectiveSubject = 'ap_calc_ab';
+  }
+
+  // Resolve effective question type: strictly 'mcq' or 'frq'
+  let effectiveType = questionType || 'mcq';
+  if (questionStyle === 'frq' || questionStyle === 'subjective') {
+    effectiveType = 'frq';
+  } else if (questionStyle === 'mcq') {
+    effectiveType = 'mcq';
+  }
+
+  // Resolve question count
+  const effectiveCount = questionCount
+    ? Number(questionCount)
+    : effectiveType === 'frq'
+    ? 2
+    : 15;
+
+  const pastQuestions = getQuestionHistory(topic);
+  let lastError = null;
+
+  for (const model of ACTIVE_MODELS) {
+    try {
+      console.log(`Generating AP Calculus paper with model: ${model} [Subject: ${effectiveSubject}, Type: ${effectiveType}, Count: ${effectiveCount}]...`);
+      const paper = await callGeminiAPIForAPCalculus(
+        model,
+        effectiveSubject,
+        effectiveType,
+        topic,
+        effectiveCount,
+        difficulty,
+        pastQuestions
+      );
+
+      if (paper && Array.isArray(paper.sections) && paper.sections.length >= 1) {
+        const allNewQuestions = paper.sections.flatMap((s) => s.questions || []);
+        saveQuestionHistory(topic, allNewQuestions);
+        return paper;
+      }
+    } catch (err) {
+      lastError = err.message;
+      console.warn(`Model ${model} failed, trying next model:`, err.message);
+    }
+  }
+
+  throw new Error(`Generation failed across all models (${lastError || 'Please check your API key & quota'}).`);
+}
+
+// Deeply Trained Gemini Prompt for Official College Board AP Calculus AB & BC
+async function callGeminiAPIForAPCalculus(
+  modelName,
+  subjectId,
+  questionTypeId,
+  topic,
+  questionCount,
+  difficulty,
+  pastQuestions = []
+) {
+  const isBC = subjectId === 'ap_calc_bc';
+  const examName = isBC ? 'AP Calculus BC' : 'AP Calculus AB';
+  const courseCode = isBC ? 'AP-CALC-BC' : 'AP-CALC-AB';
+  const isMCQ = questionTypeId === 'mcq';
 
   // Anti-duplication exclusion list
   let exclusionClause = '';
@@ -145,88 +159,165 @@ ANTI-DUPLICATION EXCLUSION LIST:
 The candidate has previously practiced the following questions on "${topic}":
 ${pastSample}
 
-CRITICAL: DO NOT repeat any of the above questions, question stems, or options! You MUST generate 100% NEW, FRESH, and UNEXPLORED questions covering different angles of "${topic}".`;
+CRITICAL: DO NOT repeat any of the above question stems, numerical parameters, or problem setups! You MUST generate 100% NEW, FRESH, and UNEXPLORED problems.`;
   }
 
-  const prompt = `You are a Senior Academic Examiner and Paper Setter for ${exam} (${country}, Level: ${grade}, Stream: ${stream}).
-Design an authentic, comprehensive examination paper for:
-- Subject Topic / Chapter: "${topic}"
-- Target Level: ${grade} (${exam})
-- Stream: ${stream}
-- Total Questions: ${questionCount}
-- Difficulty Level: ${difficulty}
-${styleDirective ? `- Requested Typology: ${styleDirective}` : ''}
-${exclusionClause}
+  // Detailed subject-specific pedagogical guidelines
+  const curriculumDirectives = isBC
+    ? `AP CALCULUS BC CURRICULUM SPECIFICATIONS (College Board Units 1–10):
+- Includes all AP Calculus AB content (Units 1–8) PLUS all BC specialties:
+  * Unit 6 (BC): Integration by Parts (Tabular method, LIATE), Linear Partial Fractions, Improper Integrals (infinite bounds, vertical asymptotes).
+  * Unit 7 (BC): Euler's Method (numerical step approximations Δx = h), Logistic Differential Equations dP/dt = kP(1 - P/M) with carrying capacity M and inflection at M/2.
+  * Unit 9: Parametric Equations, Polar Coordinates, and Vector-Valued Functions:
+    - Parametric dy/dx = y'(t)/x'(t) and d²y/dx² = [d/dt(dy/dx)] / x'(t) (watch out for students forgetting to divide by x'(t)).
+    - Vector motion: position r(t) = ⟨x(t), y(t)⟩, velocity v(t) = ⟨x'(t), y'(t)⟩, speed = √(x'(t)² + y'(t)²), total distance = ∫ speed dt.
+    - Polar slope dy/dx and Polar Area A = 1/2 ∫ r(θ)² dθ (or area between polar loops).
+  * Unit 10: Infinite Sequences and Series:
+    - Convergence tests: nth-term divergence, geometric series (|r| < 1, sum a/(1-r)), p-series (p > 1), integral test, direct & limit comparison, alternating series test & error bound (|S - S_N| ≤ b_{N+1}), ratio test for radius and interval of convergence.
+    - Taylor & Maclaurin Polynomials P_n(x) = Σ [f^(k)(c)/k!] (x - c)^k.
+    - Standard Maclaurin series: eˣ, sin x, cos x, 1/(1-x).
+    - Lagrange Error Bound (Taylor's remainder formula): |R_n(x)| ≤ [M / (n+1)!] |x - c|^(n+1).`
+    : `AP CALCULUS AB CURRICULUM SPECIFICATIONS (College Board Units 1–8):
+- STRICTLY CONFINED TO UNITS 1–8 OF COLLEGE BOARD CED:
+  * Unit 1: Limits & Continuity (Squeeze theorem, limits at infinity, vertical asymptotes, Intermediate Value Theorem IVT).
+  * Unit 2: Differentiation: Definition & Rules (Limit of difference quotient, power, product, quotient, trig derivatives).
+  * Unit 3: Composite, Implicit & Inverse Functions (Chain rule, implicit differentiation, inverse trig derivatives arcsin/arctan).
+  * Unit 4: Contextual Applications of Differentiation (Rectilinear particle motion with speeding up/slowing down signs of v(t) and a(t), related rates, local linearity & tangent line approximations, L'Hôpital's Rule for 0/0 and ∞/∞).
+  * Unit 5: Analytical Applications of Differentiation (Mean Value Theorem MVT, Extreme Value Theorem EVT, Candidates Test for absolute extrema on closed intervals, first & second derivative tests, concavity and points of inflection, optimization).
+  * Unit 6: Integration & Accumulation of Change (Riemann sums, Fundamental Theorem of Calculus FTC Parts 1 & 2, U-substitution with change of limits).
+  * Unit 7: Differential Equations (Slope fields, exponential growth/decay dy/dt = ky, separation of variables with initial conditions).
+  * Unit 8: Applications of Integration (Average value 1/(b-a) ∫ f(x)dx, area between curves, volumes of solids with known cross-sections, volumes of revolution Disk & Washer methods).
+- STRICT PROHIBITION FOR AB: DO NOT generate infinite series, polar area, parametric vectors, Euler's method, or integration by parts! Those are strictly BC.`;
 
-REQUIREMENTS:
-1. Identify the authentic official administering board/authority (e.g., CBSE, NTA, College Board, Cambridge CAIE, IB Organization, CISCE, etc.) and real subject name for this exam.
-2. Structure the paper with realistic, balanced sections (e.g. Section A: Objective / Multiple Choice, Section B: Short Answer / Conceptual, Section C: Analytical / Problem-Solving / Long Answer).
-3. Distribute approximately ${questionCount} total questions across sections logically.
-4. Every question must have:
-   - "id": "q_1", "q_2", etc.
-   - "questionNumber": 1, 2, ...
-   - "marks": positive integer marks (e.g., 1 for MCQ, 2-3 for Short Answer, 4-5 for Long Answer)
-   - "type": "mcq" | "numerical" | "subjective"
-   - "text": clear, academic question text
-   - "options": array of 4 options for mcq (e.g. ["A) ...", "B) ...", "C) ...", "D) ..."]), empty array [] for non-mcq
-   - "correctAnswer": correct option or model solution
-   - "explanation": step-by-step reasoning or mathematical working
-   - "stepMarkingScheme": array of rubric criteria awarding marks step by step
-5. Provide authentic general instructions and realistic time allowed.
+  // Question Type Specific Directives
+  let typologyInstructions = '';
+  let exampleJsonStructure = '';
 
-Return ONLY valid JSON matching this exact structure:
-{
-  "title": "${exam.toUpperCase()} EXAMINATION",
-  "board": "Official Administering Authority",
-  "subject": "Authentic Subject Name",
-  "topic": "${topic}",
-  "paperCode": "EXAM-SET-${Math.floor(100 + Math.random() * 900)}",
-  "timeAllowed": "${questionCount <= 15 ? '1 Hour 30 Mins' : questionCount <= 20 ? '2 Hours' : '3 Hours'}",
-  "maxMarks": 100,
-  "calculatorPolicy": "Standard examination calculator regulations apply.",
-  "generalInstructions": [
-    "Read all questions carefully before attempting.",
-    "All questions are compulsory unless internal choice is provided.",
-    "Show complete steps and working for numerical and derivation questions."
-  ],
+  if (isMCQ) {
+    typologyInstructions = `
+MULTIPLE CHOICE (MCQ) REQUIREMENTS:
+1. Generate exactly ${questionCount} authentic AP Calculus Multiple-Choice Questions.
+2. Every question must have EXACTLY 4 options: ["A) ...", "B) ...", "C) ...", "D) ..."].
+3. EXACTLY ONE option is mathematically correct ("correctAnswer": "A" | "B" | "C" | "D").
+4. The 3 distractor options MUST represent real, common AP Calculus student errors (e.g. forgot chain rule factor, wrong sign on FTC Part 2, evaluated at x instead of c, forgot to square in washer volume, failed to check endpoints).
+5. "marks": 1 per question.
+6. Provide a comprehensive "explanation" showing the complete analytical derivation and pointing out why the distractors are wrong.
+7. Include "calculatorAllowed": false for analytical/algebraic questions, or true for decimal numerical solver/integration questions.`;
+
+    exampleJsonStructure = `
   "sections": [
     {
-      "name": "SECTION A",
-      "description": "Objective / Multiple Choice Questions",
-      "passage": null,
+      "name": "SECTION I: MULTIPLE CHOICE",
+      "description": "${isBC ? 'AP Calculus BC' : 'AP Calculus AB'} Multiple-Choice Questions (4 Options A–D)",
+      "calculatorAllowed": false,
       "questions": [
         {
           "id": "q_1",
           "questionNumber": 1,
           "marks": 1,
           "type": "mcq",
-          "text": "Question text...",
-          "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
+          "text": "Clear, authentic AP Calculus question with standard LaTeX notation...",
+          "options": [
+            "A) Correct value or expression",
+            "B) Distractor from missing chain rule factor",
+            "C) Distractor from sign error",
+            "D) Distractor from incorrect limit evaluation"
+          ],
           "correctAnswer": "A",
-          "explanation": "Detailed step-by-step explanation...",
-          "stepMarkingScheme": ["Accurate option identified: +1 Mark"]
-        }
-      ]
-    },
-    {
-      "name": "SECTION B",
-      "description": "Short Answer & Conceptual Questions",
-      "passage": null,
-      "questions": [
-        {
-          "id": "q_2",
-          "questionNumber": 2,
-          "marks": 3,
-          "type": "subjective",
-          "text": "Question text...",
-          "options": [],
-          "correctAnswer": "Model solution...",
-          "explanation": "Marking rubric...",
-          "stepMarkingScheme": ["Concept setup: 1.5 Marks", "Final conclusion: 1.5 Marks"]
+          "explanation": "Step-by-step mathematical derivation with reasoning...",
+          "stepMarkingScheme": ["+1 Mark for identifying option A"]
         }
       ]
     }
-  ]
+  ]`;
+  } else {
+    // FRQ Mode
+    typologyInstructions = `
+FREE RESPONSE QUESTION (FRQ) REQUIREMENTS:
+1. Generate exactly ${questionCount} authentic College Board Free Response Questions (FRQs).
+2. EACH FRQ MUST BE WORTH EXACTLY 9 POINTS!
+3. Each FRQ must be multi-part, structured with clear subparts: (a), (b), (c), and (d).
+4. Each subpart must explicitly state its point allotment in the question text:
+   - Example: "(a) [2 points] ...\\n(b) [2 points] ...\\n(c) [3 points] ...\\n(d) [2 points] ..."
+5. Questions MUST follow authentic College Board FRQ archetypes:
+   - Rate In / Rate Out Accumulation (integrals of rates, net change, candidates test for absolute max/min)
+   - Particle Motion (1D position/velocity/speed for AB; 2D parametric vector velocity/speed/distance for BC)
+   - Graph Analysis (graph of f' given, accumulation function g(x) = ∫ f'(t)dt, critical points, concavity)
+   - Tabular Data (trapezoidal/Riemann approximation, estimating derivative f'(c), MVT/IVT justification)
+   - Differential Equations & Slope Fields (separation of variables, initial condition, tangent line approximation)
+   - Area & Volume (AB) OR Infinite Series / Taylor Polynomials & Error Bound (BC Question 6 archetype)
+6. "correctAnswer": Must provide a complete model solution with all calculations and justifications for parts (a), (b), (c), and (d).
+7. "stepMarkingScheme": Must contain the official AP Reader point rubric totaling EXACTLY 9 points, formatted per subpart:
+   - "Part (a) [2 pts]: 1 pt for integrand setup, 1 pt for final evaluated answer with units"
+   - "Part (b) [2 pts]: 1 pt for analyzing sign of v(t) and a(t), 1 pt for conclusion with reasoning"
+   - "Part (c) [3 pts]: 1 pt for interior critical point, 1 pt for candidates test table including endpoints, 1 pt for absolute maximum value"
+   - "Part (d) [2 pts]: 1 pt for expression setup, 1 pt for interpretation in context"`;
+
+    exampleJsonStructure = `
+  "sections": [
+    {
+      "name": "SECTION II: FREE RESPONSE",
+      "description": "${isBC ? 'AP Calculus BC' : 'AP Calculus AB'} Multi-Part Free-Response Questions (9 Points Each)",
+      "calculatorAllowed": true,
+      "questions": [
+        {
+          "id": "q_1",
+          "questionNumber": 1,
+          "marks": 9,
+          "type": "frq",
+          "text": "A continuous function f is defined on [0, 8]...\\n\\n(a) [2 points] Find the average rate of change of f on the interval [1, 5].\\n(b) [2 points] Determine whether the Mean Value Theorem applies on [0, 8]. Justify your answer.\\n(c) [3 points] Find the absolute minimum value of f on [0, 8]. Justify your answer using the Candidates Test.\\n(d) [2 points] If g(x) = ∫_{0}^{x} f(t) dt, find the x-coordinate of each point of inflection of the graph of g on (0, 8).",
+          "options": [],
+          "correctAnswer": "Model Solution:\\n(a) Average rate of change = [f(5) - f(1)] / (5 - 1) = ...\\n(b) Since f is continuous on [0, 8] and differentiable on (0, 8), MVT guarantees...\\n(c) Critical points occur where f'(x) = 0... Candidates table evaluates x = 0, critical points, and x = 8. Absolute minimum is...\\n(d) g''(x) = f'(x). Points of inflection occur where f' changes sign, which is at x = ...",
+          "explanation": "Detailed pedagogical explanation of AP scoring standards and common traps...",
+          "stepMarkingScheme": [
+            "Part (a) [2 pts]: 1 pt for difference quotient setup, 1 pt for correct answer",
+            "Part (b) [2 pts]: 1 pt for verifying hypotheses (continuity & differentiability), 1 pt for MVT conclusion",
+            "Part (c) [3 pts]: 1 pt for identifying critical points, 1 pt for candidates table with endpoints, 1 pt for answer with justification",
+            "Part (d) [2 pts]: 1 pt for relationship g''(x) = f'(x), 1 pt for inflection point with reason"
+          ]
+        }
+      ]
+    }
+  ]`;
+  }
+
+  const prompt = `You are a Chief College Board Examination Specialist, AP Calculus Exam Leader, and Senior AP Reader.
+Your task is to synthesize an authentic, rigorous, high-quality examination paper for:
+- Subject: ${examName} (${courseCode})
+- Level: ${isBC ? 'College Calculus I & II' : 'College Calculus I'}
+- Topic / Focus Unit: "${topic}"
+- Question Typology: ${isMCQ ? 'Multiple Choice (MCQ)' : 'Free Response (FRQ)'}
+- Target Total Questions: ${questionCount}
+- Difficulty: ${difficulty} (authentic AP 5-point scale rigor)
+
+${curriculumDirectives}
+
+${typologyInstructions}
+${exclusionClause}
+
+MATHEMATICAL FORMATTING RULES:
+- Use clean LaTeX formatting for math expressions (e.g. $f'(x)$, $\\frac{dy}{dx}$, $\\int_{a}^{b} f(x) dx$, $\\lim_{x \\to c}$, $\\sum_{n=1}^{\\infty}$).
+- Ensure all fractions, exponents, and integrals are cleanly readable.
+- If data tables are used, format them cleanly with clear column headers (e.g. $x$, $f(x)$, $f'(x)$).
+
+Return ONLY valid JSON matching this schema:
+{
+  "title": "${examName.toUpperCase()} EXAMINATION",
+  "board": "The College Board (Advanced Placement Program)",
+  "subject": "${examName}",
+  "courseCode": "${courseCode}",
+  "topic": "${topic}",
+  "questionType": "${isMCQ ? 'mcq' : 'frq'}",
+  "paperCode": "${courseCode}-2026-SET-${Math.floor(100 + Math.random() * 900)}",
+  "timeAllowed": "${isMCQ ? (questionCount <= 10 ? '20 Minutes' : questionCount <= 15 ? '30 Minutes' : '45 Minutes') : (questionCount * 15) + ' Minutes'}",
+  "maxMarks": ${isMCQ ? questionCount : questionCount * 9},
+  "calculatorPolicy": "${isMCQ ? 'Section I: Mixed Part A (No Calculator) & Part B (Graphing Calculator Active)' : 'Section II: Graphing Calculator Active for Part A / No Calculator for Part B'}",
+  "generalInstructions": [
+    "A graphing calculator is permitted only on designated parts of the examination.",
+    "${isMCQ ? 'Each multiple-choice question has four possible answers (A, B, C, D). Select the one best answer. No penalty for guessing.' : 'Show all your work for each free-response part. Clearly label any functions, independent variables, equations, or units. A correct answer without supporting work may not receive credit.'}",
+    "Unless otherwise specified, answers should be given in exact form or rounded to three decimal places."
+  ],
+${exampleJsonStructure.trim()}
 }`;
 
   const apiKey = getApiKey();
@@ -238,7 +329,7 @@ Return ONLY valid JSON matching this exact structure:
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: 'application/json',
-        temperature: 0.4,
+        temperature: 0.25,
       },
     }),
   });
@@ -252,9 +343,10 @@ Return ONLY valid JSON matching this exact structure:
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!rawText) throw new Error('Empty response from model');
 
-  const parsed = JSON.parse(rawText);
+  const cleanJsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+  const parsed = JSON.parse(cleanJsonText);
 
-  // Post-process, sanitize math, and ensure question IDs
+  // Post-process, sanitize math, and ensure sequential question IDs
   let qNum = 1;
   let totalCalculatedMarks = 0;
   if (Array.isArray(parsed.sections)) {
@@ -267,9 +359,16 @@ Return ONLY valid JSON matching this exact structure:
           q.questionNumber = qNum;
           q.id = `q_${qNum}`;
           qNum++;
-          const cleanMarks = Number(q.marks) || 1;
-          q.marks = cleanMarks;
-          totalCalculatedMarks += cleanMarks;
+
+          // For FRQ, guarantee 9 marks per question if not specified
+          if (isMCQ) {
+            q.marks = Number(q.marks) || 1;
+            q.type = 'mcq';
+          } else {
+            q.marks = Number(q.marks) || 9;
+            q.type = 'frq';
+          }
+          totalCalculatedMarks += q.marks;
 
           q.text = sanitizeMathText(q.text);
           if (q.correctAnswer) q.correctAnswer = sanitizeMathText(q.correctAnswer);
@@ -285,388 +384,182 @@ Return ONLY valid JSON matching this exact structure:
     });
   }
 
-  // Mathematically synchronize maxMarks so header ALWAYS matches sum of questions
   if (totalCalculatedMarks > 0) {
     parsed.maxMarks = totalCalculatedMarks;
   }
 
   parsed.dateGenerated = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   parsed.studentProfile = {
-    name: profile.name || 'Candidate',
-    grade: profile.grade,
-    country: profile.country,
-    stream: profile.stream,
-    targetExam: profile.targetExam,
+    targetExam: examName,
+    subject: examName,
+    questionType: isMCQ ? 'MCQ (Section I)' : 'FRQ (Section II)',
+    topic: topic,
   };
 
   return parsed;
 }
 
-// Live AI Answer Evaluation
+// Live AI Answer Evaluation with Strict College Board AP Reader Rubrics
 export async function evaluateStudentAnswers(examPaper, studentAnswers) {
-  const prompt = `You are the Official Chief Examiner. Evaluate these student exam answers against the exam paper.
-Paper: "${examPaper.title}" - Subject: "${examPaper.subject}" - Topic: "${examPaper.topic}".
-Questions and Student Submissions:
+  const isFRQ = examPaper.questionType === 'frq' || examPaper.sections?.[0]?.questions?.[0]?.type === 'frq';
+  const examName = examPaper.title || 'AP Calculus Exam';
+
+  const prompt = `You are a Chief College Board AP Calculus Reader.
+Evaluate the student's exam submissions against the official scoring standards for ${examName}.
+
+Exam Paper: "${examPaper.title}" - Subject: "${examPaper.subject}" - Topic: "${examPaper.topic}".
+Mode: ${isFRQ ? 'Section II Free Response Questions (9 Points Each)' : 'Section I Multiple Choice Questions'}
+
+Questions, Official Keys/Rubrics, and Student Submissions:
 ${JSON.stringify(
   examPaper.sections.flatMap((s) =>
-    s.questions.map((q) => ({
+    (s.questions || []).map((q) => ({
       questionNumber: q.questionNumber,
       marks: q.marks,
+      type: q.type,
       questionText: q.text,
       correctAnswer: q.correctAnswer,
+      officialRubric: q.stepMarkingScheme,
       studentSubmission: studentAnswers[q.id] || '[NO ANSWER SUBMITTED]',
     }))
-  )
+  ),
+  null,
+  2
 )}
 
-Evaluate each question with strict step-marking:
-Award marks step-by-step. If unanswered, award 0.
-Return ONLY valid JSON:
+AP READER EVALUATION RULES:
+1. ${isFRQ ? 'Each FRQ has 9 points distributed across subparts (a), (b), (c), (d). Award partial credit step-by-step according to the official AP Reader rubric (integrand setup, differentiation, limits, units, justifications).' : 'For MCQs, award 1 point for the correct letter option, 0 for incorrect or blank.'}
+2. For mathematical communication:
+   - Check if the student stated required hypotheses (e.g. continuity on [a,b] for IVT/MVT, differentiability for MVT).
+   - Check if units of measure are included when requested.
+   - For extrema, verify if the Candidates Test or First/Second Derivative Test was properly justified.
+3. Provide constructive, encouraging feedback pointing out specific mathematical strengths and high-yield areas for improvement.
+
+Return ONLY valid JSON matching this schema:
 {
-  "totalAwardedMarks": 55,
+  "totalAwardedMarks": 14,
   "totalMaxMarks": ${examPaper.maxMarks},
   "percentage": 78,
-  "gradeRemarks": "Distinction (Strong Conceptual Grasp)",
-  "questions": [
+  "apScoreEstimated": 4,
+  "gradeRemarks": "AP Score 4 (Well Qualified - Solid Conceptual & Analytical Mastery)",
+  "summary": "2-3 sentence executive evaluation summarizing performance...",
+  "strengths": ["Clear notation on FTC", "Accurate integral bounds"],
+  "weaknesses": ["Forgot units on related rate", "Incomplete justification on MVT"],
+  "detailedBreakdown": [
     {
       "questionNumber": 1,
-      "marksPossible": 1,
-      "marksEarned": 1,
-      "studentAnswer": "...",
-      "officialAnswer": "...",
-      "feedback": "Concise feedback",
-      "stepBreakdown": [
-        { "step": "Correct identification", "awarded": true, "note": "+1 Mark" }
-      ]
+      "maxMarks": 9,
+      "awardedMarks": 7,
+      "feedback": "Part (a) earned full 2 pts. Part (b) lost 1 pt for omitting units of cm/sec. Part (c) earned full 3 pts with excellent candidates test. Part (d) earned 1 of 2 pts.",
+      "isCorrect": false
     }
   ]
 }`;
 
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('Gemini API Key missing!');
+  }
+
   for (const model of ACTIVE_MODELS) {
     try {
-      const apiKey = getApiKey();
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json' },
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.2,
+          },
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      if (response.ok) {
+        const data = await response.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) {
-          const evalJson = JSON.parse(text);
-          evalJson.evaluatedAt = new Date().toLocaleString();
-          return evalJson;
+          const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(clean);
+          const rawItems = parsed.detailedBreakdown || parsed.questions || [];
+          parsed.questions = rawItems.map((q) => ({
+            questionNumber: q.questionNumber,
+            marksEarned: Number(q.awardedMarks ?? q.marksEarned ?? 0),
+            marksPossible: Number(q.maxMarks ?? q.marksPossible ?? (isFRQ ? 9 : 1)),
+            feedback: q.feedback || '',
+            stepBreakdown: q.stepBreakdown || (q.feedback ? [q.feedback] : []),
+          }));
+          parsed.evaluatedAt = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+          return parsed;
         }
       }
-    } catch {
-      // Try next model
+    } catch (err) {
+      console.warn(`Evaluation model ${model} failed:`, err.message);
     }
   }
 
-  // Basic fallback calculation if offline
-  let totalMaxMarks = 0;
-  let totalAwardedMarks = 0;
-  const questionEvaluations = [];
-
-  for (const section of examPaper.sections) {
-    for (const q of section.questions) {
-      totalMaxMarks += q.marks;
-      const ans = studentAnswers[q.id] || '';
-      const hasAnswered = ans.trim().length > 0;
-      const marksEarned = hasAnswered ? q.marks : 0;
-      totalAwardedMarks += marksEarned;
-      questionEvaluations.push({
-        questionNumber: q.questionNumber,
-        marksPossible: q.marks,
-        marksEarned,
-        studentAnswer: ans,
-        officialAnswer: q.correctAnswer,
-        feedback: hasAnswered ? 'Answer submitted and reviewed.' : 'Unanswered.',
-        stepBreakdown: [{ step: 'Attempt review', awarded: hasAnswered, note: `${marksEarned} Marks` }],
-      });
-    }
-  }
-
-  return {
-    totalAwardedMarks,
-    totalMaxMarks,
-    percentage: Math.round((totalAwardedMarks / totalMaxMarks) * 100),
-    gradeRemarks: 'Evaluated',
-    evaluatedAt: new Date().toLocaleString(),
-    questions: questionEvaluations,
-  };
+  throw new Error('Answer evaluation failed across all models. Please try again.');
 }
 
-function getCountryFlag(name) {
-  const map = {
-    germany: '🇩🇪',
-    deutschland: '🇩🇪',
-    france: '🇫🇷',
-    japan: '🇯🇵',
-    singapore: '🇸🇬',
-    brazil: '🇧🇷',
-    brasil: '🇧🇷',
-    italy: '🇮🇹',
-    italia: '🇮🇹',
-    spain: '🇪🇸',
-    espana: '🇪🇸',
-    china: '🇨🇳',
-    russia: '🇷🇺',
-    australia: '🇦🇺',
-    canada: '🇨🇦',
-    netherlands: '🇳🇱',
-    switzerland: '🇨🇭',
-    sweden: '🇸🇪',
-    norway: '🇳🇴',
-    finland: '🇫🇮',
-    new_zealand: '🇳🇿',
-    south_africa: '🇿🇦',
-    south_korea: '🇰🇷',
-    korea: '🇰🇷',
-    mexico: '🇲🇽',
-    saudi_arabia: '🇸🇦',
-    pakistan: '🇵🇰',
-    bangladesh: '🇧🇩',
-    nepal: '🇳🇵',
-    sri_lanka: '🇱🇰',
-    indonesia: '🇮🇩',
-    malaysia: '🇲🇾',
-    nigeria: '🇳🇬',
-    egypt: '🇪🇬',
-    argentina: '🇦🇷',
-    chile: '🇨🇱',
-    poland: '🇵🇱',
-    ireland: '🇮🇪',
-    turkey: '🇹🇷',
-  };
-  const key = name.toLowerCase().trim().replace(/\s+/g, '_');
-  return map[key] || '🌍';
-}
-
-function generateFallbackCountryCurriculum(countryName) {
-  const norm = countryName.trim();
-  const id = norm.toLowerCase().replace(/[^a-z0-9]/g, '_');
-  const flag = getCountryFlag(norm);
-  return {
-    id,
-    name: norm,
-    flag,
-    currency: '$',
-    grades: [
-      `Secondary / High School (Grades 9-10)`,
-      `Senior Secondary / College Prep (Grades 11-12)`,
-      `National Graduation Year (Grade 12)`,
-      `Pre-University / Foundation Level`,
-      `Higher Education Entrance Level`,
-    ],
-    streams: [
-      { id: 'stem', name: 'Science & STEM (Physics, Chemistry, Math)' },
-      { id: 'medical', name: 'Bio-Medical & Health Sciences (Biology, Chemistry)' },
-      { id: 'commerce', name: 'Commerce, Economics & Business Studies' },
-      { id: 'humanities', name: 'Humanities, Social Sciences & Arts' },
-      { id: 'technology', name: 'Computer Science, IT & Engineering' },
-    ],
-    targetExams: [
-      { id: `${id}_national`, name: `${norm} National Senior School Examination`, authority: `${norm} Ministry of Education` },
-      { id: `${id}_entrance`, name: `${norm} Central University Entrance Exam`, authority: `${norm} Higher Education Board` },
-      { id: `${id}_stem_cert`, name: `${norm} Advanced STEM & Science Certificate`, authority: `${norm} National Examination Council` },
-      { id: `${id}_olympiad`, name: `${norm} National Mathematics & Science Olympiad`, authority: `${norm} Olympiad Syndicate` },
-    ],
-  };
-}
-
-// Live Deep Research on Any Custom Country's Education System, Grades & Exams with Smart Validation & Typo-Correction
-export async function fetchCountryEducationSystem(countryName) {
-  const apiKey = getApiKey();
-  const query = (countryName || '').trim();
-
-  if (!query || query.length < 2) {
-    throw new Error('Please enter a valid country or state name (at least 2 letters).');
-  }
-
-  const prompt = `You are a Global Geography, National Curriculum & Educational Board Authority.
-A user is attempting to add a country or recognized state/province/territory: "${query}".
-
-YOUR INSTRUCTIONS:
-1. VALIDATION:
-   - Check if "${query}" refers to a real, authentic, existing sovereign country (e.g. Germany, Japan, France, Brazil, South Korea, Egypt, Uganda) OR an official subnational state/province/jurisdiction (e.g. Bihar, California, Bavaria, Ontario, New South Wales, Dubai, Scotland, Texas).
-   - If it is complete nonsense, random gibberish (e.g. "asdfgh", "qwerty", "xyz123"), fictional/fake places (e.g. "Wakanda", "Narnia", "Republic of X", "Unknown", "Unknown Country"), or not a real geographic educational jurisdiction:
-     Return ONLY JSON with "isValid": false and a friendly error message explaining what was invalid.
-     Example:
-     {
-       "isValid": false,
-       "error": "Could not recognize '${query}' as a real country or state. Please enter a valid geographic country or state (e.g. Germany, Japan, California, Bihar)."
-     }
-
-2. TYPO TOLERANCE & SMART AUTO-CORRECTION:
-   - If the user made minor spelling errors or typos (e.g. "Grmany" -> Germany, "Jpan" -> Japan, "Austraila" -> Australia, "Frnce" -> France, "Soth Korea" -> South Korea, "Brazl" -> Brazil, "Singapor" -> Singapore, "Deutchland" -> Germany, "Biher" -> Bihar, "Califonia" -> California):
-     Auto-correct it intelligently to the authentic official name!
-
-3. STATE / PROVINCE HANDLING:
-   - If the query is a recognized state or province (e.g. "Bihar", "California", "Bavaria", "Ontario", "New Delhi"):
-     Set "name" as: "State Name (Country Name)", e.g. "Bihar (India)", "California (United States)".
-     Set "isState": true.
-     Fetch that specific state's official board curriculum (e.g. BSEB for Bihar, California State Standards / AP for California).
-
-4. IF VALID, RETURN JSON:
-{
-  "isValid": true,
-  "id": "normalized_snake_case_id",
-  "name": "Official Corrected Country or State Name",
-  "parentCountry": "Country name if state, else same as name",
-  "flag": "Authentic country flag emoji (e.g. 🇩🇪, 🇯🇵, 🇧🇷, 🇰🇷, 🇮🇳, 🇺🇸, 🇺🇬)",
-  "countryCode": "2-letter ISO code e.g. DE, JP, US, IN, UG",
-  "currency": "Official currency symbol (e.g. €, ¥, $, ₹, £, UGX)",
-  "grades": [
-    "Grade / Level 1",
-    "Grade / Level 2",
-    "Grade / Level 3",
-    "Grade / Level 4",
-    "Grade / Level 5"
-  ],
-  "streams": [
-    { "id": "stem", "name": "Natural Sciences & STEM (Physics, Chemistry, Math)" },
-    { "id": "medical", "name": "Pre-Medical & Life Sciences (Biology, Chemistry)" },
-    { "id": "commerce", "name": "Business, Commerce & Economics" },
-    { "id": "humanities", "name": "Humanities, Arts & Social Sciences" },
-    { "id": "technical", "name": "Technical & Vocational Studies" }
-  ],
-  "targetExams": [
-    {
-      "id": "exam_1",
-      "name": "Most Prominent Official National / State Exam",
-      "authority": "Official Ministry of Education or Examination Board name"
-    }
-  ]
-}
-Include between 4 and 8 real, authentic national/state standardized and board examinations for this jurisdiction.`;
-
-  if (apiKey) {
-    for (const model of ACTIVE_MODELS) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
-          }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-            const parsed = JSON.parse(cleanText);
-
-            if (parsed.isValid === false) {
-              throw new Error(parsed.error || `Could not recognize "${query}" as a real country or state.`);
-            }
-
-            if (parsed && Array.isArray(parsed.grades) && Array.isArray(parsed.targetExams)) {
-              if (!parsed.flag || parsed.flag.length > 4) {
-                parsed.flag = getCountryFlag(parsed.parentCountry || parsed.name || query);
-              }
-              return parsed;
-            }
-          }
-        }
-      } catch (err) {
-        if (err.message && err.message.includes('Could not recognize')) {
-          throw err;
-        }
-        console.warn(`Model ${model} failed country lookup:`, err.message);
-      }
-    }
-  }
-
-  // If known country in offline dictionary, fallback safely; otherwise reject unknown
-  const flag = getCountryFlag(query);
-  if (flag !== '🌍') {
-    return generateFallbackCountryCurriculum(query);
-  }
-
-  throw new Error(`Could not recognize "${query}" as a real country or state. Please enter a valid geographic jurisdiction (e.g. Germany, Japan, France, California, Bihar).`);
-}
-
-// Stage 3: Interactive Question Tutor & AI Doubt Solver
+// Stage 3: Interactive Question Tutor & AI Doubt Solver (AP Calculus Specialist)
 export async function askAIQuestionTutor({
   question,
   paperContext = {},
-  profile = {},
-  mode = 'explain_question', // 'explain_question' or 'explain_answer'
+  mode = 'explain_question',
   userMessage = '',
   chatHistory = [],
 }) {
   const apiKey = getApiKey();
   if (!apiKey) {
-    throw new Error('Gemini API Key missing! Please configure API Key in settings.');
+    throw new Error('Gemini API Key missing!');
   }
 
-  const exam = profile.targetExam || paperContext.targetExam || 'Standardized Exam';
-  const grade = profile.grade || 'Secondary';
-  const country = profile.countryName || profile.country || 'Global';
-  const topic = paperContext.topic || 'Curriculum Subject';
+  const exam = paperContext.title || 'AP Calculus';
+  const topic = paperContext.topic || 'Calculus';
 
   const systemInstruction = mode === 'explain_question'
-    ? `You are an AI Tutor for ${exam}. Explain Question Q.${question.questionNumber} clearly in simple, intuitive terms to help the student understand how to approach and solve it.`
-    : `You are an AI Tutor for ${exam}. Provide a clear, step-by-step complete solution and marking explanation for Question Q.${question.questionNumber}.`;
+    ? `You are an expert AP Calculus Tutor. Explain Question Q.${question.questionNumber} clearly in intuitive geometric and analytical terms to help the student understand the calculus principles and solve it.`
+    : `You are an expert AP Calculus Tutor. Provide a step-by-step complete solution with College Board AP Reader scoring points for Question Q.${question.questionNumber}.`;
 
-  let conversationParts = [];
-  conversationParts.push({
-    text: `STUDENT PROFILE:
-- Target Exam: ${exam}
-- Level / Grade: ${grade}
-- Country: ${country}
+  const conversationParts = [
+    {
+      text: `EXAM CONTEXT:
+- Course: ${exam}
 - Topic: ${topic}
-
-QUESTION DETAILS:
 - Question Number: Q.${question.questionNumber}
-- Marks: ${question.marks} Mark(s)
+- Points: ${question.marks}
 - Type: ${question.type}
-- Question Text:
+
+QUESTION:
 ${question.text}
 ${question.options && question.options.length > 0 ? `\nOptions:\n${question.options.join('\n')}` : ''}
-${question.correctAnswer ? `\nOfficial Answer Key Reference: ${question.correctAnswer}` : ''}
-${question.explanation ? `\nReference Explanation: ${question.explanation}` : ''}
-${question.stepMarkingScheme && question.stepMarkingScheme.length > 0 ? `\nStep Rubric: ${question.stepMarkingScheme.join('; ')}` : ''}
+${question.correctAnswer ? `\nAnswer Key: ${question.correctAnswer}` : ''}
+${question.explanation ? `\nExplanation: ${question.explanation}` : ''}
+${question.stepMarkingScheme && question.stepMarkingScheme.length > 0 ? `\nAP Rubric: ${question.stepMarkingScheme.join('; ')}` : ''}
 
 INSTRUCTION:
 ${systemInstruction}`,
-  });
+    },
+  ];
 
-  // If there is prior chat history in this session
   if (chatHistory && chatHistory.length > 0) {
     chatHistory.forEach((msg) => {
       conversationParts.push({
-        text: `${msg.role === 'user' ? 'Student' : 'AI Tutor'}: ${msg.content}`,
+        text: `${msg.role === 'user' ? 'Student' : 'AP Calculus Tutor'}: ${msg.content}`,
       });
     });
   }
 
-  // If user sent a follow-up question
   if (userMessage && userMessage.trim()) {
     conversationParts.push({
-      text: `Student Follow-up Doubt: "${userMessage.trim()}"
-Please answer the student's follow-up doubt directly, warmly, and clearly based on the context of Q.${question.questionNumber}.`,
+      text: `Student Doubt: "${userMessage.trim()}"\nPlease address this doubt directly using clear calculus notation and step-by-step reasoning.`,
     });
   }
 
   for (const model of ACTIVE_MODELS) {
-    let timeoutId = null;
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 8500);
-
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -674,10 +567,7 @@ Please answer the student's follow-up doubt directly, warmly, and clearly based 
           contents: [{ parts: conversationParts }],
           generationConfig: { temperature: 0.25, maxOutputTokens: 1200 },
         }),
-        signal: controller.signal,
       });
-
-      if (timeoutId) clearTimeout(timeoutId);
 
       if (res.ok) {
         const data = await res.json();
@@ -685,17 +575,26 @@ Please answer the student's follow-up doubt directly, warmly, and clearly based 
         if (text) {
           return sanitizeMathText(text);
         }
-      } else {
-        const errBody = await res.text();
-        console.warn(`Model ${model} returned ${res.status}:`, errBody.slice(0, 100));
       }
-    } catch (err) {
-      if (timeoutId) clearTimeout(timeoutId);
-      console.warn(`Model ${model} failed for AI tutor:`, err.message);
+    } catch {
+      // Continue to next model
     }
   }
 
-  throw new Error('AI Tutor is temporarily busy. Please check your connection or try again in a few moments.');
+  throw new Error('AI Tutor is temporarily busy. Please try again.');
 }
 
-
+// Fallback stub for obsolete country lookup
+export async function fetchCountryEducationSystem() {
+  return {
+    isValid: true,
+    id: 'us',
+    name: 'United States',
+    flag: '🇺🇸',
+    grades: ['AP Calculus Student (High School)'],
+    targetExams: [
+      { id: 'ap_calc_ab', name: 'AP Calculus AB', authority: 'College Board' },
+      { id: 'ap_calc_bc', name: 'AP Calculus BC', authority: 'College Board' },
+    ],
+  };
+}
